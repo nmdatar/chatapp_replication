@@ -6,20 +6,19 @@ import grpc
 import chatApp_pb2
 import chatApp_pb2_grpc
 
-# _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-# _UNDELIVERED_MESSAGES = {}
-
 
 class ChatAppServicer(chatApp_pb2_grpc.ChatAppServicer):
     def __init__(self):
         self.accounts = {}
         self.name_connected = {}
+        self.message_queue = {}
 
     def createAccount(self, request, context):
         username = request.username
         if username in self.accounts:
-            return chatApp_pb2.CreateAccountResponse(success=False, message="Username Already Exists")
+            return chatApp_pb2.CreateAccountResponse(success=False, message="Account Already Exists")
         self.accounts[username] = []
+        self.name_connected[username] = 1
         return chatApp_pb2.CreateAccountResponse(success=True, message="Account Created Successfully")
 
     # check syntax for returning a list
@@ -32,34 +31,32 @@ class ChatAppServicer(chatApp_pb2_grpc.ChatAppServicer):
 
     def SendMessage(self, request, context):
         message = request.message
-        recipient = request.froUser
-        sender = request.toUser
+        sender = request.froUser
+        recipient = request.toUser
 
         if recipient not in self.accounts:
             return chatApp_pb2.SendMessageResponse(
                 success=False,
                 message='invalid user'
             )
-        # BASIC LOGIC
-        # recipient_account = self.accounts[recipient]
-        # if recipient_account.logged_in:
-        #     recipient_account.received_messages.append(message)
-        # else:
-        #     recipient_account.queued_messages.append(message)
+        if recipient in self.name_connected:
+            # TODO: actually send the message
+            return chatApp_pb2.SendMessageResponse(
+                success=False, message='Message sent successfully')
+        else:
+            if len(self.message_queue[recipient]) < 1:
+                self.message_queue[recipient] = [message]
+            else:
+                self.message_queue[recipient].append(message)
+            return chatApp_pb2.SendMessageResponse(
+                success=False, message='User is not logged in, will sed message later')
 
-        # return chat_app_pb2.SendMessageResponse(
-        #     success=True
-        # )
-
-    # BASIC LOGIC
-    # def DeliverMessages(self, request, context):
-    #     recipient = request.recipient
-    #     message = request.message
-    #     if recipient in _UNDELIVERED_MESSAGES:
-    #         _UNDELIVERED_MESSAGES[recipient].append(message)
-    #     else:
-    #         _UNDELIVERED_MESSAGES[recipient] = [message]
-    #     return chat_app_pb2.DeliveryMessageResponse(success=True)
+    def DeliverMessages(self, request, context):
+        recipient = request.recipient
+        if recipient in self.message_queue:
+            return chatApp_pb2.DeliveryMessageResponse(success=True, message=self.message_queue[recipient])
+        else:
+            return chatApp_pb2.DeliveryMessageResponse(success=False)
 
     def DeleteAccount(self, request, context):
         deleteAccount = chatApp_pb2.DeleteAccountRequest()
@@ -75,11 +72,6 @@ def serve():
     chatApp_pb2_grpc.add_ChatAppServicer_to_server(ChatAppServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
-    try:
-        while True:
-            time.sleep(60 * 60 * 24)  # one day in seconds
-    except KeyboardInterrupt:
-        server.stop(0)
 
 
 if __name__ == '__main__':
