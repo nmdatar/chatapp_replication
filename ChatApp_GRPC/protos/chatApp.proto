@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package grpc;
+
 service ChatApp {
     rpc CreateAccount (CreateAccountRequest) returns (CreateAccountResponse) {}
     rpc ListAccounts (ListAccountsRequest) returns (ListAccountsResponse) {}
@@ -18,7 +20,6 @@ message CreateAccountResponse {
 }
 
 message ListAccountsRequest {
-    
 }
 
 message ListAccountsResponse {
