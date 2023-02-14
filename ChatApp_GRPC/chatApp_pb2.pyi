@@ -1,7 +1,7 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Optional as _Optional
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -12,12 +12,12 @@ class CreateAccountRequest(_message.Message):
     def __init__(self, username: _Optional[str] = ...) -> None: ...
 
 class CreateAccountResponse(_message.Message):
-    __slots__ = ["created", "errorMessage"]
-    CREATED_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["errorMessage", "success"]
     ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
-    created: bool
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
     errorMessage: str
-    def __init__(self, created: bool = ..., errorMessage: _Optional[str] = ...) -> None: ...
+    success: bool
+    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ...) -> None: ...
 
 class DeleteAccountRequest(_message.Message):
     __slots__ = ["username"]
@@ -46,16 +46,18 @@ class DeliverResponse(_message.Message):
     def __init__(self, messages: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class ListAccountsRequest(_message.Message):
-    __slots__ = ["listAccount"]
-    LISTACCOUNT_FIELD_NUMBER: _ClassVar[int]
-    listAccount: str
-    def __init__(self, listAccount: _Optional[str] = ...) -> None: ...
+    __slots__ = ["wildcard"]
+    WILDCARD_FIELD_NUMBER: _ClassVar[int]
+    wildcard: str
+    def __init__(self, wildcard: _Optional[str] = ...) -> None: ...
 
 class ListAccountsResponse(_message.Message):
-    __slots__ = ["usernames"]
+    __slots__ = ["errorMessage", "usernames"]
+    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
     USERNAMES_FIELD_NUMBER: _ClassVar[int]
-    usernames: _containers.RepeatedCompositeFieldContainer[CreateAccountRequest]
-    def __init__(self, usernames: _Optional[_Iterable[_Union[CreateAccountRequest, _Mapping]]] = ...) -> None: ...
+    errorMessage: str
+    usernames: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, usernames: _Optional[_Iterable[str]] = ..., errorMessage: _Optional[str] = ...) -> None: ...
 
 class SendMessageRequest(_message.Message):
     __slots__ = ["froUser", "message", "toUser"]

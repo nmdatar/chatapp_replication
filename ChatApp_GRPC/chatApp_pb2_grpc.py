@@ -15,27 +15,27 @@ class ChatAppStub(object):
             channel: A grpc.Channel.
         """
         self.CreateAccount = channel.unary_unary(
-                '/ChatApp/CreateAccount',
+                '/grpc.ChatApp/CreateAccount',
                 request_serializer=chatApp__pb2.CreateAccountRequest.SerializeToString,
                 response_deserializer=chatApp__pb2.CreateAccountResponse.FromString,
                 )
         self.ListAccounts = channel.unary_unary(
-                '/ChatApp/ListAccounts',
+                '/grpc.ChatApp/ListAccounts',
                 request_serializer=chatApp__pb2.ListAccountsRequest.SerializeToString,
                 response_deserializer=chatApp__pb2.ListAccountsResponse.FromString,
                 )
         self.SendMessage = channel.unary_unary(
-                '/ChatApp/SendMessage',
+                '/grpc.ChatApp/SendMessage',
                 request_serializer=chatApp__pb2.SendMessageRequest.SerializeToString,
                 response_deserializer=chatApp__pb2.SendMessageResponse.FromString,
                 )
         self.DeliverMessages = channel.unary_unary(
-                '/ChatApp/DeliverMessages',
+                '/grpc.ChatApp/DeliverMessages',
                 request_serializer=chatApp__pb2.DeliverRequest.SerializeToString,
                 response_deserializer=chatApp__pb2.DeliverResponse.FromString,
                 )
         self.DeleteAccount = channel.unary_unary(
-                '/ChatApp/DeleteAccount',
+                '/grpc.ChatApp/DeleteAccount',
                 request_serializer=chatApp__pb2.DeleteAccountRequest.SerializeToString,
                 response_deserializer=chatApp__pb2.DeleteAccountResponse.FromString,
                 )
@@ -104,7 +104,7 @@ def add_ChatAppServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'ChatApp', rpc_method_handlers)
+            'grpc.ChatApp', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -123,7 +123,7 @@ class ChatApp(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ChatApp/CreateAccount',
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/CreateAccount',
             chatApp__pb2.CreateAccountRequest.SerializeToString,
             chatApp__pb2.CreateAccountResponse.FromString,
             options, channel_credentials,
@@ -140,7 +140,7 @@ class ChatApp(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ChatApp/ListAccounts',
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/ListAccounts',
             chatApp__pb2.ListAccountsRequest.SerializeToString,
             chatApp__pb2.ListAccountsResponse.FromString,
             options, channel_credentials,
@@ -157,7 +157,7 @@ class ChatApp(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ChatApp/SendMessage',
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/SendMessage',
             chatApp__pb2.SendMessageRequest.SerializeToString,
             chatApp__pb2.SendMessageResponse.FromString,
             options, channel_credentials,
@@ -174,7 +174,7 @@ class ChatApp(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ChatApp/DeliverMessages',
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/DeliverMessages',
             chatApp__pb2.DeliverRequest.SerializeToString,
             chatApp__pb2.DeliverResponse.FromString,
             options, channel_credentials,
@@ -191,7 +191,7 @@ class ChatApp(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ChatApp/DeleteAccount',
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/DeleteAccount',
             chatApp__pb2.DeleteAccountRequest.SerializeToString,
             chatApp__pb2.DeleteAccountResponse.FromString,
             options, channel_credentials,

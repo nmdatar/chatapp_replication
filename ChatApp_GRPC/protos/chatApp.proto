@@ -20,10 +20,12 @@ message CreateAccountResponse {
 }
 
 message ListAccountsRequest {
+    string wildcard = 1;
 }
 
 message ListAccountsResponse {
-    repeated CreateAccountRequest usernames = 1;
+    repeated string usernames = 1;
+    string errorMessage = 2;
 }
 
 message SendMessageRequest {
