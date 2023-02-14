@@ -59,6 +59,36 @@ class ListAccountsResponse(_message.Message):
     usernames: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, usernames: _Optional[_Iterable[str]] = ..., errorMessage: _Optional[str] = ...) -> None: ...
 
+class LoginRequest(_message.Message):
+    __slots__ = ["username"]
+    USERNAME_FIELD_NUMBER: _ClassVar[int]
+    username: str
+    def __init__(self, username: _Optional[str] = ...) -> None: ...
+
+class LoginResponse(_message.Message):
+    __slots__ = ["errorMessage", "queued_messages", "success"]
+    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
+    QUEUED_MESSAGES_FIELD_NUMBER: _ClassVar[int]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    errorMessage: str
+    queued_messages: _containers.RepeatedScalarFieldContainer[str]
+    success: bool
+    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ..., queued_messages: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class LogoutRequest(_message.Message):
+    __slots__ = ["username"]
+    USERNAME_FIELD_NUMBER: _ClassVar[int]
+    username: str
+    def __init__(self, username: _Optional[str] = ...) -> None: ...
+
+class LogoutResponse(_message.Message):
+    __slots__ = ["errorMessage", "success"]
+    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    errorMessage: str
+    success: bool
+    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ...) -> None: ...
+
 class SendMessageRequest(_message.Message):
     __slots__ = ["froUser", "message", "toUser"]
     FROUSER_FIELD_NUMBER: _ClassVar[int]
@@ -70,9 +100,9 @@ class SendMessageRequest(_message.Message):
     def __init__(self, message: _Optional[str] = ..., froUser: _Optional[str] = ..., toUser: _Optional[str] = ...) -> None: ...
 
 class SendMessageResponse(_message.Message):
-    __slots__ = ["errorMessage", "success"]
+    __slots__ = ["errorMessage", "message"]
     ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
-    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    MESSAGE_FIELD_NUMBER: _ClassVar[int]
     errorMessage: str
-    success: bool
-    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ...) -> None: ...
+    message: str
+    def __init__(self, message: _Optional[str] = ..., errorMessage: _Optional[str] = ...) -> None: ...

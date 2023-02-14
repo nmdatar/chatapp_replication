@@ -19,6 +19,16 @@ class ChatAppStub(object):
                 request_serializer=chatApp__pb2.CreateAccountRequest.SerializeToString,
                 response_deserializer=chatApp__pb2.CreateAccountResponse.FromString,
                 )
+        self.Login = channel.unary_unary(
+                '/grpc.ChatApp/Login',
+                request_serializer=chatApp__pb2.LoginRequest.SerializeToString,
+                response_deserializer=chatApp__pb2.LoginResponse.FromString,
+                )
+        self.Logout = channel.unary_unary(
+                '/grpc.ChatApp/Logout',
+                request_serializer=chatApp__pb2.LogoutRequest.SerializeToString,
+                response_deserializer=chatApp__pb2.LogoutResponse.FromString,
+                )
         self.ListAccounts = channel.unary_unary(
                 '/grpc.ChatApp/ListAccounts',
                 request_serializer=chatApp__pb2.ListAccountsRequest.SerializeToString,
@@ -45,6 +55,18 @@ class ChatAppServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def CreateAccount(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Login(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Logout(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -81,6 +103,16 @@ def add_ChatAppServicer_to_server(servicer, server):
                     servicer.CreateAccount,
                     request_deserializer=chatApp__pb2.CreateAccountRequest.FromString,
                     response_serializer=chatApp__pb2.CreateAccountResponse.SerializeToString,
+            ),
+            'Login': grpc.unary_unary_rpc_method_handler(
+                    servicer.Login,
+                    request_deserializer=chatApp__pb2.LoginRequest.FromString,
+                    response_serializer=chatApp__pb2.LoginResponse.SerializeToString,
+            ),
+            'Logout': grpc.unary_unary_rpc_method_handler(
+                    servicer.Logout,
+                    request_deserializer=chatApp__pb2.LogoutRequest.FromString,
+                    response_serializer=chatApp__pb2.LogoutResponse.SerializeToString,
             ),
             'ListAccounts': grpc.unary_unary_rpc_method_handler(
                     servicer.ListAccounts,
@@ -126,6 +158,40 @@ class ChatApp(object):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/CreateAccount',
             chatApp__pb2.CreateAccountRequest.SerializeToString,
             chatApp__pb2.CreateAccountResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Login(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/Login',
+            chatApp__pb2.LoginRequest.SerializeToString,
+            chatApp__pb2.LoginResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Logout(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/Logout',
+            chatApp__pb2.LogoutRequest.SerializeToString,
+            chatApp__pb2.LogoutResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

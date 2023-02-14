@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rchatApp.proto\x12\x04grpc\"(\n\x14\x43reateAccountRequest\x12\x10\n\x08username\x18\x01 \x01(\t\">\n\x15\x43reateAccountResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\"\'\n\x13ListAccountsRequest\x12\x10\n\x08wildcard\x18\x01 \x01(\t\"?\n\x14ListAccountsResponse\x12\x11\n\tusernames\x18\x01 \x03(\t\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\"F\n\x12SendMessageRequest\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07\x66roUser\x18\x02 \x01(\t\x12\x0e\n\x06toUser\x18\x03 \x01(\t\"<\n\x13SendMessageResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\"#\n\x0e\x44\x65liverRequest\x12\x11\n\trecipient\x18\x01 \x01(\t\"#\n\x0f\x44\x65liverResponse\x12\x10\n\x08messages\x18\x01 \x03(\t\"(\n\x14\x44\x65leteAccountRequest\x12\x10\n\x08username\x18\x01 \x01(\t\"7\n\x15\x44\x65leteAccountResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t2\xf2\x02\n\x07\x43hatApp\x12J\n\rCreateAccount\x12\x1a.grpc.CreateAccountRequest\x1a\x1b.grpc.CreateAccountResponse\"\x00\x12G\n\x0cListAccounts\x12\x19.grpc.ListAccountsRequest\x1a\x1a.grpc.ListAccountsResponse\"\x00\x12\x44\n\x0bSendMessage\x12\x18.grpc.SendMessageRequest\x1a\x19.grpc.SendMessageResponse\"\x00\x12@\n\x0f\x44\x65liverMessages\x12\x14.grpc.DeliverRequest\x1a\x15.grpc.DeliverResponse\"\x00\x12J\n\rDeleteAccount\x12\x1a.grpc.DeleteAccountRequest\x1a\x1b.grpc.DeleteAccountResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rchatApp.proto\x12\x04grpc\"(\n\x14\x43reateAccountRequest\x12\x10\n\x08username\x18\x01 \x01(\t\">\n\x15\x43reateAccountResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\" \n\x0cLoginRequest\x12\x10\n\x08username\x18\x01 \x01(\t\"O\n\rLoginResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\x12\x17\n\x0fqueued_messages\x18\x03 \x03(\t\"!\n\rLogoutRequest\x12\x10\n\x08username\x18\x01 \x01(\t\"7\n\x0eLogoutResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\"\'\n\x13ListAccountsRequest\x12\x10\n\x08wildcard\x18\x01 \x01(\t\"?\n\x14ListAccountsResponse\x12\x11\n\tusernames\x18\x01 \x03(\t\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\"F\n\x12SendMessageRequest\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07\x66roUser\x18\x02 \x01(\t\x12\x0e\n\x06toUser\x18\x03 \x01(\t\"<\n\x13SendMessageResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x14\n\x0c\x65rrorMessage\x18\x02 \x01(\t\"#\n\x0e\x44\x65liverRequest\x12\x11\n\trecipient\x18\x01 \x01(\t\"#\n\x0f\x44\x65liverResponse\x12\x10\n\x08messages\x18\x01 \x03(\t\"(\n\x14\x44\x65leteAccountRequest\x12\x10\n\x08username\x18\x01 \x01(\t\"7\n\x15\x44\x65leteAccountResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t2\xdd\x03\n\x07\x43hatApp\x12J\n\rCreateAccount\x12\x1a.grpc.CreateAccountRequest\x1a\x1b.grpc.CreateAccountResponse\"\x00\x12\x32\n\x05Login\x12\x12.grpc.LoginRequest\x1a\x13.grpc.LoginResponse\"\x00\x12\x35\n\x06Logout\x12\x13.grpc.LogoutRequest\x1a\x14.grpc.LogoutResponse\"\x00\x12G\n\x0cListAccounts\x12\x19.grpc.ListAccountsRequest\x1a\x1a.grpc.ListAccountsResponse\"\x00\x12\x44\n\x0bSendMessage\x12\x18.grpc.SendMessageRequest\x1a\x19.grpc.SendMessageResponse\"\x00\x12@\n\x0f\x44\x65liverMessages\x12\x14.grpc.DeliverRequest\x1a\x15.grpc.DeliverResponse\"\x00\x12J\n\rDeleteAccount\x12\x1a.grpc.DeleteAccountRequest\x1a\x1b.grpc.DeleteAccountResponse\"\x00\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'chatApp_pb2', globals())
@@ -24,22 +24,30 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _CREATEACCOUNTREQUEST._serialized_end=63
   _CREATEACCOUNTRESPONSE._serialized_start=65
   _CREATEACCOUNTRESPONSE._serialized_end=127
-  _LISTACCOUNTSREQUEST._serialized_start=129
-  _LISTACCOUNTSREQUEST._serialized_end=168
-  _LISTACCOUNTSRESPONSE._serialized_start=170
-  _LISTACCOUNTSRESPONSE._serialized_end=233
-  _SENDMESSAGEREQUEST._serialized_start=235
-  _SENDMESSAGEREQUEST._serialized_end=305
-  _SENDMESSAGERESPONSE._serialized_start=307
-  _SENDMESSAGERESPONSE._serialized_end=367
-  _DELIVERREQUEST._serialized_start=369
-  _DELIVERREQUEST._serialized_end=404
-  _DELIVERRESPONSE._serialized_start=406
-  _DELIVERRESPONSE._serialized_end=441
-  _DELETEACCOUNTREQUEST._serialized_start=443
-  _DELETEACCOUNTREQUEST._serialized_end=483
-  _DELETEACCOUNTRESPONSE._serialized_start=485
-  _DELETEACCOUNTRESPONSE._serialized_end=540
-  _CHATAPP._serialized_start=543
-  _CHATAPP._serialized_end=913
+  _LOGINREQUEST._serialized_start=129
+  _LOGINREQUEST._serialized_end=161
+  _LOGINRESPONSE._serialized_start=163
+  _LOGINRESPONSE._serialized_end=242
+  _LOGOUTREQUEST._serialized_start=244
+  _LOGOUTREQUEST._serialized_end=277
+  _LOGOUTRESPONSE._serialized_start=279
+  _LOGOUTRESPONSE._serialized_end=334
+  _LISTACCOUNTSREQUEST._serialized_start=336
+  _LISTACCOUNTSREQUEST._serialized_end=375
+  _LISTACCOUNTSRESPONSE._serialized_start=377
+  _LISTACCOUNTSRESPONSE._serialized_end=440
+  _SENDMESSAGEREQUEST._serialized_start=442
+  _SENDMESSAGEREQUEST._serialized_end=512
+  _SENDMESSAGERESPONSE._serialized_start=514
+  _SENDMESSAGERESPONSE._serialized_end=574
+  _DELIVERREQUEST._serialized_start=576
+  _DELIVERREQUEST._serialized_end=611
+  _DELIVERRESPONSE._serialized_start=613
+  _DELIVERRESPONSE._serialized_end=648
+  _DELETEACCOUNTREQUEST._serialized_start=650
+  _DELETEACCOUNTREQUEST._serialized_end=690
+  _DELETEACCOUNTRESPONSE._serialized_start=692
+  _DELETEACCOUNTRESPONSE._serialized_end=747
+  _CHATAPP._serialized_start=750
+  _CHATAPP._serialized_end=1227
 # @@protoc_insertion_point(module_scope)

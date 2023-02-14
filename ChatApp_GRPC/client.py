@@ -4,6 +4,7 @@ import chatApp_pb2_grpc
 
 
 def run():
+
     # create a channel to the server
     with grpc.insecure_channel('localhost:50051') as channel:
         # create a stub (client)
@@ -24,6 +25,23 @@ def run():
             else:
                 print("Account failed to create")
 
+        elif request == "login":
+            username = input("Enter your username:")
+            response = stub.Login(chatApp_pb2.LoginRequest(username=username))
+            if response.success:
+                print("Account logged in")
+            else:
+                print("Invalid account")
+
+        elif request == "logout":
+            username = input("Enter your username:")
+            response = stub.Logout(
+                chatApp_pb2.LogoutRequest(username=username))
+            if response.success:
+                print("Account logged out")
+            else:
+                print("Invalid account or not currently logged in")
+
         # List accounts function - COMPLETE (check wildcard logic)
         elif request == "listAccounts":
             if len(request) > 1:
@@ -33,13 +51,14 @@ def run():
             print("List accounts response: ", response)
 
         # Send message function - INCOMPLETE
-        elif request[0] == "sendMessage":
-            message = request[1]
-            recipient = request[2]
-            sender = request[3]
+        elif request == "sendMessage":
+            recipient = input("Recipient:")
+            message = input("Message:")
+            sender = input("Your name:")
 
-            send_response = stub.SendMessage([message, recipient, sender])
-            print("Send message response: ", send_response)
+            response = stub.SendMessage(chatApp_pb2.SendMessageRequest(
+                message=message, toUser=recipient, froUser=sender))
+            print("Response Send Message:", response)
 
         # Deliver undelivered message - INCOMPLETE
         elif request[0] == "deliverMessage":
