@@ -4,8 +4,6 @@ import select
 
 #Create socket object
 clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# clientsocket.setblocking(False)
-#Local machine name
 host = socket.gethostname()
 port = 8888
 
@@ -18,9 +16,12 @@ print("""Enter request (create <username> <password> list [optional]<search_term
 while True:
     sys.stdout.write("$ ")
     sys.stdout.flush()
+
+    # Check if input from client vs server message sending
     readable, writable, exceptional = select.select(inputs, [], [])
     for r in readable:
         
+        # If received message from server
         if r is clientsocket:
             response = r.recv(1024)
             if response:
@@ -29,25 +30,19 @@ while True:
                 print('socket closing...')
                 clientsocket.close()
                 sys.exit()
-            
+
+        # If client provides a command input      
         elif r is sys.stdin:
                 
                 sys.stdout.write("-->\n")
                 sys.stdout.flush()
                 request = input("")
                 request = request.split()
-
-
-                # if request[0] == "create":
-                #     # username = input("Enter a username: ")
-                #     # password = input("Enter a password: ")
-                #     clientsocket.send((request).encode())
-                #     # Receive the response from the server
-                #     response = clientsocket.recv(1024).decode()
-                #     print(response)
                 
+                # send request to server
                 clientsocket.send((" ".join(request)).encode())
 
+                # flush undelivered messages if login, delete, or deliver
                 if request[0] == "login" or request[0] == 'delete' or request[0] == 'deliver':
                     response = ""
                     responses = []
@@ -59,23 +54,9 @@ while True:
                         else:
                             print(response)
 
-                # elif request[0] == 'delete':
-                #     response = None
-                #     while (response != ""):
-                #         response = clientsocket.recv(1024).decode()
-                #         print(response)
-
                 else: 
                     response = clientsocket.recv(1024).decode()
                     print(response)
-
-        # elif request[0] == "list":
-        #     search_term = ""
-        #     if len(request) > 1:
-        #         search_term = request[1]
-        #     clientsocket.send(("list_accounts" + search_term).encode())
-        #     response = clientsocket.recv(1024).decode()
-        #     print(response)
 
 # Close the connection
 clientsocket.close()
