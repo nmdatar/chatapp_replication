@@ -6,18 +6,20 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Optional as _Op
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class CreateAccountRequest(_message.Message):
-    __slots__ = ["username"]
+    __slots__ = ["password", "username"]
+    PASSWORD_FIELD_NUMBER: _ClassVar[int]
     USERNAME_FIELD_NUMBER: _ClassVar[int]
+    password: str
     username: str
-    def __init__(self, username: _Optional[str] = ...) -> None: ...
+    def __init__(self, username: _Optional[str] = ..., password: _Optional[str] = ...) -> None: ...
 
 class CreateAccountResponse(_message.Message):
-    __slots__ = ["errorMessage", "success"]
-    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["status", "success"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    errorMessage: str
+    status: str
     success: bool
-    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ...) -> None: ...
+    def __init__(self, success: bool = ..., status: _Optional[str] = ...) -> None: ...
 
 class DeleteAccountRequest(_message.Message):
     __slots__ = ["username"]
@@ -33,17 +35,17 @@ class DeleteAccountResponse(_message.Message):
     success: bool
     def __init__(self, success: bool = ..., error: _Optional[str] = ...) -> None: ...
 
-class DeliverRequest(_message.Message):
+class DeliverMessageRequest(_message.Message):
     __slots__ = ["recipient"]
     RECIPIENT_FIELD_NUMBER: _ClassVar[int]
     recipient: str
     def __init__(self, recipient: _Optional[str] = ...) -> None: ...
 
-class DeliverResponse(_message.Message):
-    __slots__ = ["messages"]
-    MESSAGES_FIELD_NUMBER: _ClassVar[int]
-    messages: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, messages: _Optional[_Iterable[str]] = ...) -> None: ...
+class DeliveryMessageResponse(_message.Message):
+    __slots__ = ["status"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    status: str
+    def __init__(self, status: _Optional[str] = ...) -> None: ...
 
 class ListAccountsRequest(_message.Message):
     __slots__ = ["wildcard"]
@@ -52,28 +54,28 @@ class ListAccountsRequest(_message.Message):
     def __init__(self, wildcard: _Optional[str] = ...) -> None: ...
 
 class ListAccountsResponse(_message.Message):
-    __slots__ = ["errorMessage", "usernames"]
-    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["status", "usernames"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
     USERNAMES_FIELD_NUMBER: _ClassVar[int]
-    errorMessage: str
+    status: str
     usernames: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, usernames: _Optional[_Iterable[str]] = ..., errorMessage: _Optional[str] = ...) -> None: ...
+    def __init__(self, usernames: _Optional[_Iterable[str]] = ..., status: _Optional[str] = ...) -> None: ...
 
 class LoginRequest(_message.Message):
-    __slots__ = ["username"]
+    __slots__ = ["password", "username"]
+    PASSWORD_FIELD_NUMBER: _ClassVar[int]
     USERNAME_FIELD_NUMBER: _ClassVar[int]
+    password: str
     username: str
-    def __init__(self, username: _Optional[str] = ...) -> None: ...
+    def __init__(self, username: _Optional[str] = ..., password: _Optional[str] = ...) -> None: ...
 
 class LoginResponse(_message.Message):
-    __slots__ = ["errorMessage", "queued_messages", "success"]
-    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
-    QUEUED_MESSAGES_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["status", "success"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    errorMessage: str
-    queued_messages: _containers.RepeatedScalarFieldContainer[str]
+    status: str
     success: bool
-    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ..., queued_messages: _Optional[_Iterable[str]] = ...) -> None: ...
+    def __init__(self, success: bool = ..., status: _Optional[str] = ...) -> None: ...
 
 class LogoutRequest(_message.Message):
     __slots__ = ["username"]
@@ -82,27 +84,25 @@ class LogoutRequest(_message.Message):
     def __init__(self, username: _Optional[str] = ...) -> None: ...
 
 class LogoutResponse(_message.Message):
-    __slots__ = ["errorMessage", "success"]
-    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["status", "success"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
     SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    errorMessage: str
+    status: str
     success: bool
-    def __init__(self, success: bool = ..., errorMessage: _Optional[str] = ...) -> None: ...
+    def __init__(self, success: bool = ..., status: _Optional[str] = ...) -> None: ...
 
-class SendMessageRequest(_message.Message):
-    __slots__ = ["froUser", "message", "toUser"]
-    FROUSER_FIELD_NUMBER: _ClassVar[int]
+class Message(_message.Message):
+    __slots__ = ["message", "recipient", "sender"]
     MESSAGE_FIELD_NUMBER: _ClassVar[int]
-    TOUSER_FIELD_NUMBER: _ClassVar[int]
-    froUser: str
+    RECIPIENT_FIELD_NUMBER: _ClassVar[int]
+    SENDER_FIELD_NUMBER: _ClassVar[int]
     message: str
-    toUser: str
-    def __init__(self, message: _Optional[str] = ..., froUser: _Optional[str] = ..., toUser: _Optional[str] = ...) -> None: ...
+    recipient: str
+    sender: str
+    def __init__(self, message: _Optional[str] = ..., recipient: _Optional[str] = ..., sender: _Optional[str] = ...) -> None: ...
 
 class SendMessageResponse(_message.Message):
-    __slots__ = ["errorMessage", "message"]
-    ERRORMESSAGE_FIELD_NUMBER: _ClassVar[int]
-    MESSAGE_FIELD_NUMBER: _ClassVar[int]
-    errorMessage: str
-    message: str
-    def __init__(self, message: _Optional[str] = ..., errorMessage: _Optional[str] = ...) -> None: ...
+    __slots__ = ["status"]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    status: str
+    def __init__(self, status: _Optional[str] = ...) -> None: ...

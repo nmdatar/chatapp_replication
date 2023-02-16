@@ -10,42 +10,19 @@ import chatApp_pb2_grpc
 class ChatAppServicer(chatApp_pb2_grpc.ChatAppServicer):
     def __init__(self):
         self.accounts = {}
-        self.user_connected = {}
-        self.message_queue = {}
-        self.message_sent = {}
-
-    def Login(self, request, context):
-
-        user = request.username
-        if user in self.accounts:
-            self.user_connected[user] = grpc.insecure_channel(
-                'localhost:50051')
-            return chatApp_pb2.LoginResponse(success=True, errorMessage="You are logged in")
-        else:
-            return chatApp_pb2.CreateAccountResponse(success=False,
-                                                     errorMessage="Invalid User")
-
-    def Logout(self, request, context):
-        user = request.username
-        if user in self.user_connected:
-            connection = self.user_connected[user]
-            connection.close()
-            del self.user_connected[user]
-            return chatApp_pb2.LogoutResponse(success=True, errorMessage="Successfully logged out")
-        else:
-            return chatApp_pb2.LogoutResponse(success=False, errorMessage="Invalid user")
+        self.socket_to_user = {}
 
     def CreateAccount(self, request, context):
-        newUser = request.username
-        if newUser in self.accounts:
-            return chatApp_pb2.CreateAccountResponse(success=False, errorMessage="Account Already Exists")
+        username = request.username
+        password = request.password
+        if username in self.accounts:
+            return chatApp_pb2.CreateAccountResponse(success=False, status="Account Already Exists")
+        else:
+            self.accounts[username] = {
+                "password": password, "active": False, "received_messages": [], "context": None}
+            return chatApp_pb2.CreateAccountResponse(success=True, status="Account successfully created")
 
-        return chatApp_pb2.CreateAccountResponse(success=True,
-                                                 errorMessage="Account Created Successfully")
-
-    # the wildcard logic may requires more work
     def ListAccounts(self, request, context):
-        print(self.accounts, "all accounts")
         search_term = request.wildcard
         if search_term:
             matching_accounts = [
@@ -54,46 +31,62 @@ class ChatAppServicer(chatApp_pb2_grpc.ChatAppServicer):
             matching_accounts = list(self.accounts.keys())
         if matching_accounts:
             response = "\n".join(matching_accounts)
-            return chatApp_pb2.ListAccountsResponse(usernames=response, errorMessage="These are matching accounts")
+            return chatApp_pb2.ListAccountsResponse(usernames=response, status="These are matching accounts")
         else:
-            return chatApp_pb2.ListAccountsResponse(usernames="None", errorMessage="No matching accounts")
+            return chatApp_pb2.ListAccountsResponse(usernames="None", status="No matching accounts")
 
-    # DeliverMessage
-
-    def DeliverMessages(self, request, context):
-        recipient = request.recipient
-        if recipient in self.message_queue and recipient in self.user_connected:
-            for sender, message in self.message_queue[recipient]:
-                self.user_connected[recipient].send(
-                    sender.encode(), message.encode())
-            return chatApp_pb2.DeliveryMessageResponse(success=True, message=self.message_queue[recipient])
+    def Login(self, request, context):
+        username = request.username
+        password = request.password
+        self.socket_to_user[context.peer()] = username
+        if username in self.accounts and self.accounts[username]["password"] == password:
+            self.accounts[username]["context"] = context
+            self.accounts[username]["active"] = True
+            return chatApp_pb2.LoginResponse(success=True, status="You are logged in")
         else:
-            return chatApp_pb2.DeliveryMessageResponse(success=False, message="No messages for this user")
+            return chatApp_pb2.LoginResponse(success=False,
+                                             status="Invalid User")
 
     def SendMessage(self, request, context):
         message = request.message
-        sender = request.froUser
-        recipient = request.toUser
+        recipient = request.recipient
+        sender = request.sender
+        print("context", context)
+        print("longer thing", self.accounts[recipient]["context"])
+
+        # if valid username
         if recipient in self.accounts:
-            if recipient in self.user_connected:
-                stub = chatApp_pb2_grpc.ChatAppStub(
-                    self.user_connected[recipient])
-                stub.send(message.encode())
-                return chatApp_pb2.SendMessageResponse(success=True, errorMessage='Message successfully sent')
+            if self.accounts[recipient]["active"]:
+                message_send = f"\nFrom {sender}: Message: {message}"
+                context.send_initial_metadata([])
+                return chatApp_pb2.SendMessageResponse(status=message_send)
             else:
-                if recipient not in self.message_queue:
-                    self.message_queue[recipient] = []
-                else:
-                    self.message_queue[recipient].append((sender, message))
-                    return chatApp_pb2.SendMessageResponse(
-                        success=True,
-                        message='User is not currently log in. Message will send when recipient is connected.'
-                    )
+                # recipient is not online, save message for later delivery
+                self.accounts[recipient]["received_messages"].append(
+                    [sender, message])
+                return chatApp_pb2.SendMessageResponse(status="Recipient not online. Will deliver on demand.")
         else:
             return chatApp_pb2.SendMessageResponse(
-                success=True,
-                message='Invalid User'
+                status='Invalid User'
             )
+
+    # DeliverMessagesd
+    def DeliverMessages(self, request, context):
+        username = request.username
+        password = request.password
+        if username in self.accounts and self.accounts[username]["password"] == password:
+            for item in self.accounts[username]["received_messages"]:
+                message_send = f"From {item[0]}: Message: {item[1]}\n"
+                response = chatApp_pb2.DeliverMessageRequest(
+                    status=message_send)
+                self.accounts[username]["context"].Send(response)
+            self.accounts[username]["received_messages"] = []
+            response = chatApp_pb2.DeliverMessageRequest(status="")
+            self.accounts[username]["context"].Send(response)
+        else:
+            response = chatApp_pb2.DeliverMessageRequest(
+                status="Nonexistent account or wrong password")
+            self.accounts[username]["context"].Send(response)
 
     # Delete Account - COMPLETE
     def DeleteAccount(self, request, context):
@@ -112,12 +105,7 @@ def serve():
     chatApp_pb2_grpc.add_ChatAppServicer_to_server(ChatAppServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
-    print("server started on port [::]:50051")
-    try:
-        while True:
-            time.sleep(60 * 60 * 24)  # one day in seconds
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 
 if __name__ == '__main__':

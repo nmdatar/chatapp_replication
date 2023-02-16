@@ -14,20 +14,22 @@ def run():
 
         # Create account function - COMPLETE
         if request == "createAccount":
-            userAccount = input("Enter a username: ")
+            username = input("Enter a username: ")
+            password = input("Password: ")
             # create a request message
             response = stub.CreateAccount(
-                chatApp_pb2.CreateAccountRequest(username=userAccount))
+                chatApp_pb2.CreateAccountRequest(username=username, password=password))
             # call the create account function
-            print(response, "response")
             if response.success:
-                print("Account created successfully")
+                print(response)
             else:
-                print("Account failed to create")
+                print(response)
 
         elif request == "login":
             username = input("Enter your username:")
-            response = stub.Login(chatApp_pb2.LoginRequest(username=username))
+            password = input("Password:")
+            response = stub.Login(chatApp_pb2.LoginRequest(
+                username=username, password=password))
             if response.success:
                 print("Account logged in")
             else:
@@ -44,11 +46,10 @@ def run():
 
         # List accounts function - COMPLETE (check wildcard logic)
         elif request == "listAccounts":
-            if len(request) > 1:
-                wildcard = input("Enter any text: ")
+            wildcard = input("Enter any text: ")
             response = stub.ListAccounts(
                 chatApp_pb2.ListAccountsRequest(wildcard=wildcard))
-            print("List accounts response: ", response)
+            print("Response: ", response)
 
         # Send message function - INCOMPLETE
         elif request == "sendMessage":
@@ -56,13 +57,16 @@ def run():
             message = input("Message:")
             sender = input("Your name:")
 
-            response = stub.SendMessage(chatApp_pb2.SendMessageRequest(
-                message=message, toUser=recipient, froUser=sender))
-            print("Response Send Message:", response)
+            response = stub.SendMessage(chatApp_pb2.Message(
+                message=message, recipient=recipient, sender=sender))
+            print("Response:", response)
 
         # Deliver undelivered message - INCOMPLETE
-        elif request[0] == "deliverMessage":
-            print("hello")
+        elif request == "deliverMessage":
+            recipient = input("Recipient:")
+            response = stub.SendMessage(chatApp_pb2.Message(
+                recipient=recipient))
+            print("Response Send Message:", response)
 
         # Delete account - COMPLETE
         elif request == "deleteAccount":

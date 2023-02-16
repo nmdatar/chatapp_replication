@@ -36,13 +36,13 @@ class ChatAppStub(object):
                 )
         self.SendMessage = channel.unary_unary(
                 '/grpc.ChatApp/SendMessage',
-                request_serializer=chatApp__pb2.SendMessageRequest.SerializeToString,
+                request_serializer=chatApp__pb2.Message.SerializeToString,
                 response_deserializer=chatApp__pb2.SendMessageResponse.FromString,
                 )
-        self.DeliverMessages = channel.unary_unary(
+        self.DeliverMessages = channel.stream_stream(
                 '/grpc.ChatApp/DeliverMessages',
-                request_serializer=chatApp__pb2.DeliverRequest.SerializeToString,
-                response_deserializer=chatApp__pb2.DeliverResponse.FromString,
+                request_serializer=chatApp__pb2.DeliverMessageRequest.SerializeToString,
+                response_deserializer=chatApp__pb2.DeliveryMessageResponse.FromString,
                 )
         self.DeleteAccount = channel.unary_unary(
                 '/grpc.ChatApp/DeleteAccount',
@@ -84,7 +84,7 @@ class ChatAppServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def DeliverMessages(self, request, context):
+    def DeliverMessages(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -121,13 +121,13 @@ def add_ChatAppServicer_to_server(servicer, server):
             ),
             'SendMessage': grpc.unary_unary_rpc_method_handler(
                     servicer.SendMessage,
-                    request_deserializer=chatApp__pb2.SendMessageRequest.FromString,
+                    request_deserializer=chatApp__pb2.Message.FromString,
                     response_serializer=chatApp__pb2.SendMessageResponse.SerializeToString,
             ),
-            'DeliverMessages': grpc.unary_unary_rpc_method_handler(
+            'DeliverMessages': grpc.stream_stream_rpc_method_handler(
                     servicer.DeliverMessages,
-                    request_deserializer=chatApp__pb2.DeliverRequest.FromString,
-                    response_serializer=chatApp__pb2.DeliverResponse.SerializeToString,
+                    request_deserializer=chatApp__pb2.DeliverMessageRequest.FromString,
+                    response_serializer=chatApp__pb2.DeliveryMessageResponse.SerializeToString,
             ),
             'DeleteAccount': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteAccount,
@@ -224,13 +224,13 @@ class ChatApp(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/SendMessage',
-            chatApp__pb2.SendMessageRequest.SerializeToString,
+            chatApp__pb2.Message.SerializeToString,
             chatApp__pb2.SendMessageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def DeliverMessages(request,
+    def DeliverMessages(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -240,9 +240,9 @@ class ChatApp(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/grpc.ChatApp/DeliverMessages',
-            chatApp__pb2.DeliverRequest.SerializeToString,
-            chatApp__pb2.DeliverResponse.FromString,
+        return grpc.experimental.stream_stream(request_iterator, target, '/grpc.ChatApp/DeliverMessages',
+            chatApp__pb2.DeliverMessageRequest.SerializeToString,
+            chatApp__pb2.DeliveryMessageResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
