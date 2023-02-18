@@ -4,17 +4,17 @@ import select
 
 #Create socket object
 clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = socket.gethostname()
+host = '10.250.196.39'
 port = 8888
 
 # Connect to the server
 clientsocket.connect((host, port))
 
 inputs = [clientsocket, sys.stdin]
-print("""Enter request (create <username> <password> list [optional]<search_term>\n): """)
+print("""\nEnter 'help' to see command usage :) \n""")
 # Account creation request from user
 while True:
-    sys.stdout.write("$ ")
+    sys.stdout.write("\033[92mchatapp@love:~$\033[0m ")
     sys.stdout.flush()
 
     # Check if input from client vs server message sending

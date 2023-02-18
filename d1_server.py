@@ -171,7 +171,7 @@ def handle_client(clientsocket, addr):
             help(clientsocket=clientsocket)
 
         else:
-            clientsocket.send("Invalid command\nValid commands: create list login send deliver delete".encode())
+            clientsocket.send("Invalid command\nValid commands: create list login send deliver delete help".encode())
 
 def deliver(username, password, clientsocket):
 
