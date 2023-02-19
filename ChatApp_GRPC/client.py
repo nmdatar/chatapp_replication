@@ -1,100 +1,127 @@
+import threading
+from typing import Optional
+import os
+
 import grpc
-import chatApp_pb2
-import chatApp_pb2_grpc
+
+from proto import chatapp_pb2 as chatapp
+from proto import chatapp_pb2_grpc as rpc
+
+address = 'localhost'
+port = 11912
 
 
-def run():
+class Client:
 
-    # create a channel to the server
-    with grpc.insecure_channel('localhost:50051') as channel:
-        # create a stub (client)
-        stub = chatApp_pb2_grpc.ChatAppStub(channel)
-        request = input(
-            "Enter request (createAccount, listAccounts, sendMessage, deliverMessage, or deleteAccount): ")
+    def __init__(self, username: Optional[str]):
+        self.username = username
+        # create a gRPC channel + stub
+        channel = grpc.insecure_channel(address + ':' + str(port))
+        self.conn = rpc.ChatServiceStub(channel)
 
-        # Create account function - COMPLETE
-        if request == "createAccount":
-            username = input("Enter a username: ")
-            password = input("Password: ")
-            # create a request message
-            response = stub.CreateAccount(
-                chatApp_pb2.CreateAccountRequest(username=username, password=password))
-            # call the create account function
-            if response.success:
-                print(response)
+        # create new thread for message streaming
+        threading.Thread(target=self.__listen_for_messages, daemon=True).start()
+
+        # start main loop
+        self.main_loop()
+
+    def create_or_login_user(self):
+        if self.username is None:
+            self.username = input("Please enter a new username:\n")
+
+        print(f'Logging in {self.username}')
+
+        res1 = self.conn.LoginAccount(chatapp.Account(username=self.username))
+
+        if not res1.success:
+            print(f'Account not exist. Creating one...')
+            res2 = self.conn.CreateAccount(chatapp.Account(username=self.username))
+
+            if not res2.success:
+                print(f'Creating account failed...')
             else:
-                print(response)
+                self.username = None
 
-        elif request == "login":
-            username = input("Enter your username:")
-            password = input("Password:")
-            response = stub.Login(chatApp_pb2.LoginRequest(
-                username=username, password=password))
-            if response.success:
-                print("Account logged in")
-            else:
-                print("Invalid account")
+    def delete_account(self):
+        if self.username is None:
+            return
 
-        elif request == "logout":
-            username = input("Enter your username:")
-            response = stub.Logout(
-                chatApp_pb2.LogoutRequest(username=username))
-            if response.success:
-                print("Account logged out")
-            else:
-                print("Invalid account or not currently logged in")
+        print(f'Deleting account: {self.username}')
 
-        # List accounts function - COMPLETE (check wildcard logic)
-        elif request == "listAccounts":
-            wildcard = input("Enter any text: ")
-            response = stub.ListAccounts(
-                chatApp_pb2.ListAccountsRequest(wildcard=wildcard))
-            print("Response: ", response)
-
-        # Send message function - INCOMPLETE
-        elif request == "sendMessage":
-            recipient = input("Recipient:")
-            message = input("Message:")
-            sender = input("Your name:")
-
-            response = stub.SendMessage(chatApp_pb2.Message(
-                message=message, recipient=recipient, sender=sender))
-            print("Response:", response)
-
-        # Deliver undelivered message - INCOMPLETE
-        elif request == "deliverMessage":
-            recipient = input("Recipient:")
-            response = stub.SendMessage(chatApp_pb2.Message(
-                recipient=recipient))
-            print("Response Send Message:", response)
-
-        # Delete account - COMPLETE
-        elif request == "deleteAccount":
-            deleteAccount = input("Enter account: ")
-            response = stub.DeleteAccount(
-                chatApp_pb2.DeleteAccountRequest(username=deleteAccount))
-            # delete the account
-            if response.success:
-                print("Account deleted successfully")
-
-            else:
-                print("Non-existent account")
+        res = self.conn.DeleteAccount(chatapp.Account(username=self.username))
+    
+        if not res.success:
+            print(f'Deleting account failed...')
         else:
-            print("Request unaccepted")
+            self.username = None
+    
+    def logout_account(self):
+        if self.username is None:
+            return
 
+        print(f'Logging out account: {self.username}')
 
-run()
-# # create a request message for send message
-# send_request = chatApp_pb2.SendMessageRequest(
-#     sender='user1', recipient='user2', message='hello user2')
+        res = self.conn.LogoutAccount(chatapp.Account(username=self.username))
+        if not res.success:
+            print(f'Logging out account failed...')
+        else:
+            self.username = None
+            os._exit(0)
 
-# # call the send message function
-# send_response = stub.SendMessage(send_request)
-# print("Send message response: ", send_response.response)
+    def list_accounts(self):
+        search_term = input("Please enter your search term:\n")
 
-# # create a request message for retrieve message
-# retrieve_request = chatApp_pb2.RetrieveMessagesRequest(username='user2')
+        print(f'Listing accounts that matches search term: {search_term}')
 
-# # call the retrieve message function
-# retrieve_response = stub.RetrieveMessages(retrieve_request)
-# print("Retrieve message response: ", retrieve_response.messages)
+        for account in self.conn.ListAccounts(chatapp.ListAccountQuery(search_term=search_term)): 
+            print(account)
+
+    def send_message(self):
+        if self.username is None:
+            return
+
+        toUsername = input('To whom are you sending this message?\n')
+        message = input("Write your message below:\n")
+
+        res = self.conn.SendMessage(chatapp.Message(fromUsername=self.username, toUsername=toUsername, message=message))
+        if not res:
+            print(f'Message retry delivery failed...')
+
+    def deliver_messages(self):
+        if self.username is None:
+            return
+
+        toUsername = input("Which username do you want to retry message delivery:\n")
+
+        res = self.conn.DeliverMessages(chatapp.Account(username=toUsername))
+        if not res.success:
+            print(f'Message retry delivery failed...')
+
+    def __listen_for_messages(self):
+        print('Client is listening for new messages')
+        responses = self.conn.ChatStream(chatapp.Empty())
+
+        for msg in responses:
+            print(chatapp.Message(msg))
+
+    def main_loop(self):
+        while True:
+            command = input("Enter your command below:\n")
+
+            if command == 'login':
+                self.create_or_login_user()
+            elif command == 'delete_account':
+                self.delete_account()
+            elif command == 'list_accounts':
+                self.list_accounts()
+            elif command == 'logout':
+                self.logout_account()
+            elif command == 'send':
+                self.send_message()
+            elif command == 'retry':
+                self.deliver_messages()
+            else:
+                print("Invalid command. Please try again")
+
+if __name__ == '__main__':
+    c = Client(None)

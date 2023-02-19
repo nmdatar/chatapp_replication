@@ -1,112 +1,169 @@
 from concurrent import futures
-import time
+from typing import List
 
 import grpc
+import time
 
-import chatApp_pb2
-import chatApp_pb2_grpc
+from proto import chatapp_pb2 as chatapp
+from proto import chatapp_pb2_grpc as rpc
 
 
-class ChatAppServicer(chatApp_pb2_grpc.ChatAppServicer):
+class ChatServer(rpc.ChatServiceServicer):
+
     def __init__(self):
-        self.accounts = {}
-        self.socket_to_user = {}
+        # username: list of dict
+        # dict: { username: str, online: true}
+        self.usernames: dict[str, bool] = {}
 
-    def CreateAccount(self, request, context):
+        # messages: list of objects
+        # dict: { from: str, to: str, message: str }
+        self.messages: List = []
+
+        # messages: list of objects
+        # dict: { from: str, to: str, message: str }
+        self.queued_messages: List = []
+
+        # retry message flag
+        # str | None
+        self.retry_flag = None
+
+    def CreateAccount(self, request: chatapp.Account, context):
         username = request.username
-        password = request.password
-        if username in self.accounts:
-            return chatApp_pb2.CreateAccountResponse(success=False, status="Account Already Exists")
-        else:
-            self.accounts[username] = {
-                "password": password, "active": False, "received_messages": [], "context": None}
-            return chatApp_pb2.CreateAccountResponse(success=True, status="Account successfully created")
+        print(f'creating account for username: {username}')
 
-    def ListAccounts(self, request, context):
-        search_term = request.wildcard
-        if search_term:
-            matching_accounts = [
-                username for username in self.accounts if search_term in username]
-        else:
-            matching_accounts = list(self.accounts.keys())
-        if matching_accounts:
-            response = "\n".join(matching_accounts)
-            return chatApp_pb2.ListAccountsResponse(usernames=response, status="These are matching accounts")
-        else:
-            return chatApp_pb2.ListAccountsResponse(usernames="None", status="No matching accounts")
+        if username in self.usernames:
+            return chatapp.CommonResponse(success=False, message="Account Exists Already")
 
-    def Login(self, request, context):
+        self.usernames[username] = True
+        return chatapp.CommonResponse(success=True, message="Account Created Succesfully")
+
+    def DeleteAccount(self, request: chatapp.Account, context):
         username = request.username
-        password = request.password
-        self.socket_to_user[context.peer()] = username
-        if username in self.accounts and self.accounts[username]["password"] == password:
-            self.accounts[username]["context"] = context
-            self.accounts[username]["active"] = True
-            return chatApp_pb2.LoginResponse(success=True, status="You are logged in")
-        else:
-            return chatApp_pb2.LoginResponse(success=False,
-                                             status="Invalid User")
+        print(f'deleting username: {username}')
 
-    def SendMessage(self, request, context):
+        if username not in self.usernames:
+            return chatapp.CommonResponse(success=False, message="Username doesn't exist")
+
+        # deleting username
+        del self.usernames[username]
+
+        # delete messages
+        for message_obj in self.messages:
+            if message_obj.fromUserame is username:
+                self.messages.remove(message_obj)
+
+        for message_obj in self.queued_messages:
+            if message_obj.fromUserame is username:
+                self.queued_messages.remove(message_obj)
+
+        return chatapp.CommonResponse(success=True, message="Username deleted Succesfully")
+
+    def LoginAccount(self, request: chatapp.Account, context):
+        username = request.username
+        print(f'login username: {username}')
+
+        if username not in self.usernames:
+            return chatapp.CommonResponse(success=False, message="Username doesn't exist")
+
+
+        self.usernames[username] = True
+        return chatapp.CommonResponse(success=True, message='Username logged in Succesfully')
+
+    def LogoutAccount(self, request: chatapp.Account, context):
+        username = request.username
+        print(f'logout username: {username}')
+
+        if username not in self.usernames:
+            return chatapp.CommonResponse(success=False, message="Username doesn't exist")
+
+        self.usernames[username] = False
+        return chatapp.CommonResponse(success=True, message="Username logged in Succesfully")
+
+    def ListAccounts(self, request: chatapp.ListAccountQuery, context):
+        search_term = request.search_term
+        print(f'listing accounts with search term: {search_term}')
+        
+        if search_term is not None:
+            search_term = request.search_term
+            matching_accounts = [username for username in self.usernames if search_term in username]
+
+            for account in matching_accounts:
+                yield account
+        else:
+            for account in self.usernames:
+                yield account 
+
+    def SendMessage(self, request: chatapp.Message, context):
+        fromUsername = request.fromUsername
+        toUsername = request.toUsername
         message = request.message
-        recipient = request.recipient
-        sender = request.sender
-        print("context", context)
-        print("longer thing", self.accounts[recipient]["context"])
 
-        # if valid username
-        if recipient in self.accounts:
-            if self.accounts[recipient]["active"]:
-                message_send = f"\nFrom {sender}: Message: {message}"
-                context.send_initial_metadata([])
-                return chatApp_pb2.SendMessageResponse(status=message_send)
-            else:
-                # recipient is not online, save message for later delivery
-                self.accounts[recipient]["received_messages"].append(
-                    [sender, message])
-                return chatApp_pb2.SendMessageResponse(status="Recipient not online. Will deliver on demand.")
+        print(f'{fromUsername} send the following message to {toUsername}: {message}')
+
+        if fromUsername not in self.usernames:
+            return chatapp.CommonResponse(success=False, message="From username doesn't exist")
+
+        if toUsername not in self.usernames:
+            return chatapp.CommonResponse(success=False, message="To username doesn't exist")
+
+        message_obj = {
+            'fromUsername': fromUsername,
+            'toUsername': toUsername,
+            'message': message
+        }
+
+        if (self.usernames[toUsername]):
+            self.messages.append(message_obj)
         else:
-            return chatApp_pb2.SendMessageResponse(
-                status='Invalid User'
-            )
+            self.queued_messages.append(message_obj)
+        return chatapp.CommonResponse(success=True, message="Message sent Succesfully")
 
-    # DeliverMessagesd
-    def DeliverMessages(self, request, context):
+    def ChatStream(self, request_iterator, context):
+        last_index = 0
+
+        while True:
+            # retry undelivered message flag is on
+            if self.retry_flag is not None:
+                for message_obj in self.queued_messages[:]:
+                    toUsername = message_obj.toUsername
+
+                    # send only to online
+                    if(toUsername is self.retry_flag
+                        and self.usernames[toUsername]):
+                        # delete queued message in original queue
+                        self.queued_messages.remove(message_obj)
+                        yield message_obj
+
+                # reset retry flag
+                self.retry_flag = None
+
+            # stream messages to online users
+            while len(self.messages) > last_index:
+                message_obj = self.messages[last_index]
+                last_index += 1
+                print(message_obj)
+                yield message_obj
+
+    def DeliverMessages(self, request: chatapp.Account, context):
         username = request.username
-        password = request.password
-        if username in self.accounts and self.accounts[username]["password"] == password:
-            for item in self.accounts[username]["received_messages"]:
-                message_send = f"From {item[0]}: Message: {item[1]}\n"
-                response = chatApp_pb2.DeliverMessageRequest(
-                    status=message_send)
-                self.accounts[username]["context"].Send(response)
-            self.accounts[username]["received_messages"] = []
-            response = chatApp_pb2.DeliverMessageRequest(status="")
-            self.accounts[username]["context"].Send(response)
-        else:
-            response = chatApp_pb2.DeliverMessageRequest(
-                status="Nonexistent account or wrong password")
-            self.accounts[username]["context"].Send(response)
+        print(f'retry message(s) to {username}')
 
-    # Delete Account - COMPLETE
-    def DeleteAccount(self, request, context):
-        user = request.username
-        if user in self.accounts and user in self.user_connected:
-            connection = self.user_connected[user]
-            connection.close()
-            del self.user_connected[user]
-            return chatApp_pb2.DeleteAccountResponse(success=True, error="Account Deleted Successfully")
-        else:
-            return chatApp_pb2.DeleteAccountResponse(success=False, error="Account Doesn't Exist")
+        if username not in self.usernames:
+            return chatapp.CommonResponse(success=False, message="Username doesn't exist")
+
+        self.retry_flag = username
+        return chatapp.CommonResponse(success=True, message="Retrying messages now")
 
 
-def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    chatApp_pb2_grpc.add_ChatAppServicer_to_server(ChatAppServicer(), server)
-    server.add_insecure_port('[::]:50051')
+if __name__ == "__main__":
+    port = 11912
+    # creating a server
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  
+    rpc.add_ChatServiceServicer_to_server(ChatServer(), server)
+
+    print(f'✅ Starting server. Listening on port {port}')
+    server.add_insecure_port('[::]:' + str(port))
     server.start()
-    server.wait_for_termination()
 
-
-if __name__ == '__main__':
-    serve()
+    while True:
+        time.sleep(64 * 64 * 100)
