@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package grpc;
+
+message Empty {}
+
+message Account {
+    string username = 1;
+}
+
+message Message {
+    string fromUsername = 1;
+    string toUsername = 2;
+    string message = 3;
+}
+
+message CommonResponse {
+    bool success = 1;
+    optional string message = 2;
+}
+
+message ListAccountQuery {
+    optional string search_term = 1;
+}
+
+service ChatService {
+    // create an account
+    rpc CreateAccount (Account) returns (CommonResponse);
+
+    // delete account
+    rpc DeleteAccount (Account) returns (CommonResponse);
+
+    // login account
+    rpc LoginAccount (Account) returns (CommonResponse);
+
+    // logout account
+    rpc LogoutAccount (Account) returns (CommonResponse);
+
+    // list accounts, could supply a search term
+    rpc ListAccounts (ListAccountQuery) returns (stream Account);
+
+    // send messages
+    rpc SendMessage (Message) returns (CommonResponse);
+
+    // stream messages
+    rpc ChatStream (Empty) returns (stream Message);
+
+    // retry message
+    rpc DeliverMessages (Account) returns (stream CommonResponse);
+
+} 
