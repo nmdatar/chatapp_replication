@@ -4,11 +4,25 @@ import selectors
 import types 
 import threading
 
-lock = threading.Lock()
-
-#create dictionary for account information storage
+# create dictionary for account information storage
 accounts = {}
+
+# dictionary to map connected addresses to usernames
 socket_to_user = {}
+
+# current version command map
+cmap = {
+    "create" : 0,
+    "list" : 1,
+    "login" : 2,
+    "send" : 3,
+    "delete" : 4,
+    "deliver" : 5,
+    "help" : 6,
+}
+
+# Define version of handling client commands
+version = 1
 
 def handle_client(clientsocket, addr):
 
@@ -16,6 +30,7 @@ def handle_client(clientsocket, addr):
 
         request = clientsocket.recv(1024).decode()
 
+        # Check if connection has ended/been closed
         if not request:
             if str(addr) in socket_to_user:
                 accounts[socket_to_user[str(addr)]]["active"] = False
@@ -26,8 +41,18 @@ def handle_client(clientsocket, addr):
 
         request = request.split()
 
-        if request[0] == "create":
+        # Check correct version in client code
+        if (request[0] != str(version)):
+            print(request[0])
+            clientsocket.send("Incorrect client software version. Please use an updated version!".encode())
+            break
+
+        request.pop(0)
+
+        # CREATE
+        if request[0] == str(cmap['create']):
             
+            # Make sure command is correct length
             if len(request) != 3:
                 help(clientsocket=clientsocket)
                 continue
@@ -40,6 +65,8 @@ def handle_client(clientsocket, addr):
 
             elif username in accounts:
                 clientsocket.send("Account with username already exists. Try again".encode())
+            
+            # If successful create and init a new account
             else:
                 accounts[username] = {}
                 accounts[username]["password"] = password
@@ -48,15 +75,14 @@ def handle_client(clientsocket, addr):
                 accounts[username]["connection"] = None
                 clientsocket.send("Account successfully created".encode())
 
-        # LIST
-            
-        elif request[0] == "list":
+        # LIST 
+        elif request[0] == str(cmap['list']):
 
             if len(request) >= 3:
                 help(clientsocket=clientsocket)
                 continue
 
-            #check wildcard
+            # check a list of accounts with wildcard if given
             if len(request) > 1:
                 search_term = request[1]
                 matching_accounts = [username for username in accounts if search_term in username]
@@ -70,7 +96,8 @@ def handle_client(clientsocket, addr):
             else:
                 clientsocket.send("No matching accounts".encode())
         
-        elif request[0] == "login":     
+        # LOGIN
+        elif request[0] == str(cmap['login']):     
             
             if len(request) != 3:
                 help(clientsocket=clientsocket)
@@ -80,15 +107,18 @@ def handle_client(clientsocket, addr):
             username = request[1]
             password = request[2]
 
+            # Check if logged in already
             if str(addr) in socket_to_user:
                 clientsocket.send("You are already logged into an account!".encode())
 
+            # Make sure correct account information is provided
             elif username in accounts and accounts[username]["password"] == password:
                 accounts[username]["active"] = True
                 accounts[username]["connection"] = clientsocket
                 socket_to_user[str(addr)] = username
                 clientsocket.send("Login successful".encode())
 
+                # Deliver undelivered messages
                 if len(accounts[username]["received_messages"]) >= 1:
                     clientsocket.send("Account has undelivered messages: ".encode())
                     deliver(username=username, password=password, clientsocket=clientsocket)
@@ -98,34 +128,38 @@ def handle_client(clientsocket, addr):
             
             clientsocket.send("\r\n\r\n".encode())
         
-        elif request[0] == "send":
+        # SEND
+        elif request[0] == str(cmap['send']):
             
             if len(request) < 3:
                 help(clientsocket=clientsocket)
                 continue
 
+            # Check self socket status
             if (str(addr)) not in socket_to_user:
                 clientsocket.send("Please login to send a message".encode())
             
             else:
-                # sender = request[1]  
                 recipient = request[1]
                 message = " ".join(request[2: ])
 
                 #check user in sequence
-
                 if recipient in accounts:
+                    # Check if logged in
                     if accounts[recipient]['active'] == True:
                         message_send = f"\nFrom {socket_to_user[str(addr)]}: Message: {message}"
                         accounts[recipient]["connection"].send(message_send.encode())
                         clientsocket.send("Message delivered!".encode())
+
+                    # Otherwise queue the message
                     else:
                         accounts[recipient]["received_messages"].append([socket_to_user[str(addr)], message])
                         clientsocket.send("Recipient not online. Will deliver on demand :)".encode())
                 else:
                     clientsocket.send("Invalid: user not found".encode())
 
-        elif request[0] == "deliver":
+        # DELIVER
+        elif request[0] == str(cmap['deliver']):
             
             if len(request) != 3:
                 help(clientsocket=clientsocket)
@@ -137,7 +171,8 @@ def handle_client(clientsocket, addr):
             deliver(username=username, password=password, clientsocket=clientsocket)
             clientsocket.send('\r\n\r\n'.encode())
 
-        elif request[0] == "delete":
+        # DELETE
+        elif request[0] == str(cmap['delete']):
 
             if len(request) != 3:
                 help(clientsocket=clientsocket)
@@ -147,15 +182,18 @@ def handle_client(clientsocket, addr):
             username = request[1]
             password = request[2]
             
+            # Check if another client is loggged in
             if username in accounts and accounts[username]["connection"] is not None and accounts[username]["connection"] != clientsocket:
                 clientsocket.send("Another client is logged into this account!".encode())
             
+            # Check if current user is logged in in any capacity
             elif (str(addr) in socket_to_user):
                 if (socket_to_user[str(addr)] == username):
                     clientsocket.send("You are logged into the account to be deleted. Logout first".encode())
                 else:
                     clientsocket.send("You are logged into a different account. Unable to delete".encode())
 
+            # Aim to delete the account
             elif username in accounts and accounts[username]["password"] == password:
                 if len(accounts[username]["received_messages"]) >= 1:
                     clientsocket.send("Account has undelivered messages: \n".encode())
@@ -167,7 +205,8 @@ def handle_client(clientsocket, addr):
 
             clientsocket.send("\r\n\r\n".encode())
 
-        elif request[0] == "help":
+        # HELP
+        elif request[0] == str(cmap['help']):
             help(clientsocket=clientsocket)
 
         else:
@@ -198,30 +237,36 @@ def help(clientsocket):
     deliver <username> <password> \n
     To logout, disconnect and reconnect to the sever!
     """.encode())
-#socket object creation
-serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-#get information of local machine
-host = socket.gethostname()
-port = 8888
+def run():
 
-#bind port
-serversocket.bind((host, port))
+    #socket object creation
+    serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-#listen for connections
-serversocket.listen(5)
-print(f"Server running on port {port}")
-try: 
-    while True:
+    #get information of local machine
+    host = socket.gethostname()
+    port = 8888
 
-        # Accept incoming requests
-        clientsocket, addr = serversocket.accept()
-        print("Connection coming from %s" % str(addr))
+    #bind port
+    serversocket.bind((host, port))
 
-        # Put client in its own thread
-        client_thread = threading.Thread(target=handle_client, args=(clientsocket, addr))
-        client_thread.start()
-except KeyboardInterrupt:
-    pass
+    #listen for connections
+    serversocket.listen(5)
+    print(f"Server running on port {port}")
+    try: 
+        while True:
 
-serversocket.close()
+            # Accept incoming requests
+            clientsocket, addr = serversocket.accept()
+            print("Connection coming from %s" % str(addr))
+
+            # Put client in its own thread
+            client_thread = threading.Thread(target=handle_client, args=(clientsocket, addr))
+            client_thread.start()
+    except KeyboardInterrupt:
+        pass
+
+    serversocket.close()
+
+if __name__ == "__main__":
+    run()

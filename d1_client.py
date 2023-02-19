@@ -6,11 +6,20 @@ import select
 clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = '10.250.196.39'
 port = 8888
-
+version = 1
 # Connect to the server
 clientsocket.connect((host, port))
 
 inputs = [clientsocket, sys.stdin]
+cmap = {
+    "create" : 0,
+    "list" : 1,
+    "login" : 2,
+    "send" : 3,
+    "delete" : 4,
+    "deliver" : 5,
+    "help" : 6,
+}
 print("""\nEnter 'help' to see command usage :) \n""")
 # Account creation request from user
 while True:
@@ -38,14 +47,17 @@ while True:
                 sys.stdout.flush()
                 request = input("")
                 request = request.split()
-                
+                if (request[0] in cmap):
+                    request[0] = str(cmap[request[0]])
+                else:
+                    request[0] = str(max(cmap.values()) + 1)
                 # send request to server
+                request = [str(version)] + request
                 clientsocket.send((" ".join(request)).encode())
 
                 # flush undelivered messages if login, delete, or deliver
-                if request[0] == "login" or request[0] == 'delete' or request[0] == 'deliver':
+                if request[1] == str(cmap['login']) or request[1] == str(cmap['delete']) or request[1] == str(cmap['deliver']):
                     response = ""
-                    responses = []
                     while (response[-4:] != '\r\n\r\n'):
                         response = clientsocket.recv(1024).decode()
                         if response[-4:] == '\r\n\r\n':
