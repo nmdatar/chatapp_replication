@@ -1,1 +1,0 @@
-__all__ = ['chatapp_pb2', 'chatapp_pb2_grpc']
