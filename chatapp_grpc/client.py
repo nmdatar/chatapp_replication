@@ -96,11 +96,16 @@ class Client:
             print(f'Message retry delivery failed...')
 
     def __listen_for_messages(self):
-        print('Client is listening for new messages')
+        print(
+            f'Client is listening for new messages intended for {self.username}')
         responses = self.conn.ChatStream(chatapp.Empty())
 
         for msg in responses:
-            print(chatapp.Message(msg))
+            m = chatapp.Message(msg)
+
+            # only parse message intended for self
+            if m.toUsername == self.username:
+                print(f'New message from {m.fromUsername}: {m.message}')
 
     def main_loop(self):
         while True:
