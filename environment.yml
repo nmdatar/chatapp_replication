@@ -1,0 +1,27 @@
+name: chatapp
+channels:
+  - defaults
+dependencies:
+  - c-ares=1.18.1=h1a28f6b_0
+  - ca-certificates=2023.01.10=hca03da5_0
+  - certifi=2022.12.7=py39hca03da5_0
+  - grpcio=1.42.0=py39h95c9599_0
+  - grpcio-tools=1.16.1=py39hc377ac9_0
+  - libcxx=14.0.6=h848a8c0_0
+  - libffi=3.4.2=hca03da5_6
+  - libprotobuf=3.20.3=h514c7bf_0
+  - ncurses=6.4=h313beb8_0
+  - openssl=1.1.1t=h1a28f6b_0
+  - pip=22.3.1=py39hca03da5_0
+  - protobuf=3.20.3=py39h313beb8_0
+  - python=3.9.16=hc0d8a6c_0
+  - readline=8.2=h1a28f6b_0
+  - setuptools=65.6.3=py39hca03da5_0
+  - six=1.16.0=pyhd3eb1b0_1
+  - sqlite=3.40.1=h7a7dc30_0
+  - tk=8.6.12=hb8d0fd4_0
+  - tzdata=2022g=h04d1e81_0
+  - wheel=0.38.4=py39hca03da5_0
+  - xz=5.2.10=h80987f9_1
+  - zlib=1.2.13=h5a0b063_0
+
