@@ -46,6 +46,6 @@ service ChatService {
     rpc ChatStream (Empty) returns (stream Message);
 
     // retry message
-    rpc DeliverMessages (Account) returns (stream CommonResponse);
+    rpc DeliverMessages (Account) returns (CommonResponse);
 
 } 

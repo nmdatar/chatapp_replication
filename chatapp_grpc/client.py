@@ -92,6 +92,8 @@ class Client:
             "Which username do you want to retry message delivery:\n")
 
         res = self.conn.DeliverMessages(chatapp.Account(username=toUsername))
+
+        print(res)
         if not res['success']:
             print(f'Message retry delivery failed...')
 
