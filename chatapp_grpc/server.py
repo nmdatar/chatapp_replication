@@ -88,10 +88,10 @@ class ChatServer(rpc.ChatServiceServicer):
                 username for username in self.usernames if search_term in username]
 
             for account in matching_accounts:
-                yield account
+                yield chatapp.Account(username=account)
         else:
             for account in self.usernames:
-                yield account
+                yield chatapp.Account(username=account)
 
     def SendMessage(self, request: chatapp.Message, context):
         fromUsername = request.fromUsername
@@ -125,14 +125,14 @@ class ChatServer(rpc.ChatServiceServicer):
             # retry undelivered message flag is on
             if self.retry_flag is not None:
                 for message_obj in self.queued_messages[:]:
-                    toUsername = message_obj.toUsername
+                    toUsername = message_obj['toUsername']
 
                     # send only to online
                     if (toUsername is self.retry_flag
                             and self.usernames[toUsername]):
                         # delete queued message in original queue
                         self.queued_messages.remove(message_obj)
-                        yield message_obj
+                        yield chatapp.Message(fromUsername=message_obj['fromUsername'], toUsername=message_obj['toUsername'], message=message_obj['message'])
 
                 # reset retry flag
                 self.retry_flag = None
@@ -142,7 +142,7 @@ class ChatServer(rpc.ChatServiceServicer):
                 message_obj = self.messages[last_index]
                 last_index += 1
                 print(message_obj)
-                yield message_obj
+                yield chatapp.Message(fromUsername=message_obj['fromUsername'], toUsername=message_obj['toUsername'], message=message_obj['message'])
 
     def DeliverMessages(self, request: chatapp.Account, context):
         username = request.username

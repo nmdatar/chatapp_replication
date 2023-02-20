@@ -101,11 +101,9 @@ class Client:
         responses = self.conn.ChatStream(chatapp.Empty())
 
         for msg in responses:
-            m = chatapp.Message(msg)
-
             # only parse message intended for self
-            if m.toUsername == self.username:
-                print(f'New message from {m.fromUsername}: {m.message}')
+            if msg.toUsername == self.username:
+                print(f'New message from {msg.fromUsername}: {msg.message}')
 
     def main_loop(self):
         while True:
