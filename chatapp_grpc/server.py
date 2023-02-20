@@ -49,11 +49,11 @@ class ChatServer(rpc.ChatServiceServicer):
 
         # delete messages
         for message_obj in self.messages:
-            if message_obj.fromUserame is username:
+            if message_obj['fromUserame'] == username:
                 self.messages.remove(message_obj)
 
         for message_obj in self.queued_messages:
-            if message_obj.fromUserame is username:
+            if message_obj['fromUserame'] == username:
                 self.queued_messages.remove(message_obj)
 
         return chatapp.CommonResponse(success=True, message="Username deleted Succesfully")
@@ -64,7 +64,6 @@ class ChatServer(rpc.ChatServiceServicer):
 
         if username not in self.usernames:
             return chatapp.CommonResponse(success=False, message="Username doesn't exist")
-
 
         self.usernames[username] = True
         return chatapp.CommonResponse(success=True, message='Username logged in Succesfully')
@@ -82,16 +81,17 @@ class ChatServer(rpc.ChatServiceServicer):
     def ListAccounts(self, request: chatapp.ListAccountQuery, context):
         search_term = request.search_term
         print(f'listing accounts with search term: {search_term}')
-        
+
         if search_term is not None:
             search_term = request.search_term
-            matching_accounts = [username for username in self.usernames if search_term in username]
+            matching_accounts = [
+                username for username in self.usernames if search_term in username]
 
             for account in matching_accounts:
                 yield account
         else:
             for account in self.usernames:
-                yield account 
+                yield account
 
     def SendMessage(self, request: chatapp.Message, context):
         fromUsername = request.fromUsername
@@ -128,8 +128,8 @@ class ChatServer(rpc.ChatServiceServicer):
                     toUsername = message_obj.toUsername
 
                     # send only to online
-                    if(toUsername is self.retry_flag
-                        and self.usernames[toUsername]):
+                    if (toUsername is self.retry_flag
+                            and self.usernames[toUsername]):
                         # delete queued message in original queue
                         self.queued_messages.remove(message_obj)
                         yield message_obj
@@ -158,7 +158,7 @@ class ChatServer(rpc.ChatServiceServicer):
 if __name__ == "__main__":
     port = 11912
     # creating a server
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))  
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     rpc.add_ChatServiceServicer_to_server(ChatServer(), server)
 
     print(f'✅ Starting server. Listening on port {port}')
