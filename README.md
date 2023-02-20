@@ -22,9 +22,9 @@ Run Server `python3 chatapp_websocket/server.py`
 
 Run Client `python3 chatapp_websocket/client.py`
 
-## Documentation for Design Project 1
+# Documentation for Design Project 1
 
-# Part A: Server Side
+## Part I: Server Side
 
 The server side sets up the clients to engage in a chat application with the following functionalities (which will be elaborated on further on).
 
