@@ -1,7 +1,5 @@
 # Chat App
 
-In this project, we implement a chat app with two different implementation. One using the gRPC framework, the other using Python's socket library.
-
 Documentation for Design Project 1
 
 Part A: Server Side
@@ -17,11 +15,11 @@ List: returns list of all usernames that match provided search term, otherwise r
 Login: logs in the user with provided username and password if username exists, not logged in, and has the correct username password match. After logged in, it checks for undelivered messages, and if there are any, delivers them to user, otherwise returns error  
 Send: sends message from sender to recipient if recipient exists and logged in, if not logged in, stores the message in the received_message list, otherwise returns error
 Deliver: delivers any undelivered messages with the provided username and password if they exist and are logged in, otherwise returns error
-Delete: deletes the account with the provided username and password if it exists and is not currently logged in by another client. if the account has undelivered messages, the function delivers them to the user, otherwise, it returns an error message. We have done this outside the login side so that undelivered messages are still sent despite the user not existing anymore.
+Delete: deletes the account with the provided username and password if it exists and is not currently logged in by another client. if the account has undelivered messages, the function delivers them to the user, otherwise, it returns an error message. We have done this outside the login side so that undelivered messages are still accounted for on both sides despite the user not existing anymore (i.e. if the sender’s account got deleted as well as the receiver’s one). Although if the sender’s account got deleted and the messages are queued to send (which it will still do), structuring it this way also ensures that if the receiver’s account gets deleted, the messages in the queue will still send. 
 
 If none of the above functions are recognized, then an error message will show saying that the request was not found. 
 
-To tie things up, the overall script has been set up using TCP sockets for communication and a dictionary to store account names. It listens for a specific port that we have specified to look out for incoming connections from clients (which will be elaborated in the following section). Each new TCP socket will be created using the socket.socket() function, selectors.DefaultSelector to monitor new connections, and threading.Thread to handle simultaneous requests through multithreading to allow the requests to take place in a separate thread. 
+To tie things up, the overall script has been set up using TCP sockets for communication and a dictionary to store account names. It listens for a specific port that we have specified to look out for incoming connections from clients (which will be elaborated in the following section). Each new TCP socket will be created using the socket.socket() function, selectors.DefaultSelector to monitor new connections, and threading.Thread to handle simultaneous requests through multithreading to allow the requests to take place in a separate thread. This was done to enable the efficient processing and capabilities of many different clients. 
 
 Part B: Client Side
 
@@ -29,7 +27,7 @@ On the client side, the user is allowed to send request to the server using comm
 
 Linking to the server involves the client socket object creation using socket.socket() with parameters AF_INET and SOCK_STREAM that specifies the address family of the socket as IPv4 and the TCP type respectively. We then connect to the server using the IP address and the port number specified on the server end using clientsocket.connect() with the aforementioned as the parameters. Here, the user will be prompted with a message to enter a command using a standard print() statement.
 
-Firstly, our program has the select module that monitors the client socket and the standard input stream for incoming data. It checks if it comes from the server or the user (using select.select()) to decide what to do. If the message is frm the server, the message will be decoded and printed using the print() statement. If from the user, we will proceed with the following:
+Firstly, our program has the select module that monitors the client socket and the standard input stream for incoming data. It checks if it comes from the server or the user (using select.select()) to decide what to do. If the message is from the server, the message will be decoded and printed using the print() statement. If from the user, we will proceed with the following:
 
 The cmap dictionary maps user command strings to integers that are sent to the server. This is done to simplify the message protocol and reduce the amount of data that needs to be transmitted. The code also includes some special handling for the "login", "delete", and "deliver" commands. When any of these commands are entered by the user, the code waits for the server to send a response with a specific ending sequence of characters ("\r\n\r\n"). This is done to ensure that all messages have been delivered before continuing with the next command. 
 
