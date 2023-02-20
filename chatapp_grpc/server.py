@@ -114,6 +114,7 @@ class ChatServer(rpc.ChatServiceServicer):
 
         if (self.usernames[toUsername]):
             self.messages.append(message_obj)
+            return chatapp.CommonResponse(success=False, message="Message Queued")
         else:
             self.queued_messages.append(message_obj)
         return chatapp.CommonResponse(success=True, message="Message sent Succesfully")
@@ -125,11 +126,10 @@ class ChatServer(rpc.ChatServiceServicer):
             # retry undelivered message flag is on
             if self.retry_flag is not None:
                 for message_obj in self.queued_messages[:]:
-                    toUsername = message_obj['toUsername']
 
                     # send only to online
-                    if (toUsername is self.retry_flag
-                            and self.usernames[toUsername]):
+                    if (message_obj["toUsername"] == self.retry_flag
+                            and self.usernames[message_obj["toUsername"]]):
                         # delete queued message in original queue
                         self.queued_messages.remove(message_obj)
                         yield chatapp.Message(fromUsername=message_obj['fromUsername'], toUsername=message_obj['toUsername'], message=message_obj['message'])
