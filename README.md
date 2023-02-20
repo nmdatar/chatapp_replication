@@ -92,3 +92,9 @@ With `ChatStream` running in the back, `SendMessage` stores message in `self.mes
 ### Delete Account
 
 You delete the account if you are logged in. After you delete the account, all your messages and queued_messages (unsent messages) are deleted as well.
+
+### Comparison: gRPC vs. Websocket
+
+There are multiple differences between the performance of gRPC and Websockets because of the way gRPC is designed. First of all, gRPC is higher performing than WebSocket because it uses HTTP/2, which allows gRPC to handle multiple gRPC calls between client and servers with a few TCP connections. gRPC also uses binary encoding of protocol buffers, meaning the size of the buffers of the same information being sent back and forth is smaller than traditional text-based protocols like HTTP or WebSocket.
+
+gRPC is also less complex than Websockets because gRPC provides high-level abstraction for defining and implementing remote procedures. As we have explained previously, the developer using gRPC only needs to define the service interface for protocol buffers in .proto and gRPC auto-generates the server and client code. On the contrary, implementing the WebSocket method requires implementing details of establishing a connection, sending and receiving messages, parsing data, etc, which makes the program more complex and therefore more prone to error.
