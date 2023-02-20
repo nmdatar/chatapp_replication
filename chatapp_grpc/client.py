@@ -84,7 +84,7 @@ class Client:
 
         res = self.conn.SendMessage(chatapp.Message(
             fromUsername=self.username, toUsername=toUsername, message=message))
-        if not res:
+        if not res or not res.success:
             print(f'Message retry delivery failed...')
 
     def deliver_messages(self):
@@ -92,7 +92,7 @@ class Client:
             "Which username do you want to retry message delivery:\n")
 
         res = self.conn.DeliverMessages(chatapp.Account(username=toUsername))
-        if not res.success:
+        if not res['success']:
             print(f'Message retry delivery failed...')
 
     def __listen_for_messages(self):
