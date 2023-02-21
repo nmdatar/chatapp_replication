@@ -61,11 +61,11 @@ To recap the usability side of things that the user will input to the client, we
 - Delete username password
 - Deliver username message
 
-Other features we have integrated are the following to ensure general reliability across commands:
+Other features we have later integrated are the following to ensure general reliability across commands (UPDATES):
 
-Between the client and the server, they each have a version and it first checks if the message that is coming from the client has that version; otherwise it rejects the version. In an actual protocol, a server may have commands that are present in one version that aren't in the other so we use this restriction so that all compatiibilities are met. 
+Between the client and the server, they each have a version and it first checks if the message that is coming from the client has that version; otherwise it rejects the version. In an actual protocol, a server may have commands that are present in one version that aren't in the other so we use this restriction so that all compatiibilities are met. This is something that we realized we needed to account for as we were developing our code. 
 
-Furthermore, since we can't send messages as a string, we have the encode message as a UTF-8 as a series of bytes in order for the commands to be sent across in the functions we have outlined above. 
+Furthermore, since we can't send messages as a string, we have the encode message as a UTF-8 as a series of bytes in order for the commands to be sent across in the functions we have outlined above. We considered sending the entire string but we realized this would be sending way more data than needed. 
 
 ## Part II: gRPC
 
