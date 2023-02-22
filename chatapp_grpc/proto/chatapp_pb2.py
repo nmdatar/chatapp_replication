@@ -11,24 +11,27 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13proto/chatapp.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"\x1b\n\x07\x41\x63\x63ount\x12\x10\n\x08username\x18\x01 \x01(\t\"D\n\x07Message\x12\x14\n\x0c\x66romUsername\x18\x01 \x01(\t\x12\x12\n\ntoUsername\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"C\n\x0e\x43ommonResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x07message\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\n\n\x08_message\"<\n\x10ListAccountQuery\x12\x18\n\x0bsearch_term\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_search_term2\xb5\x03\n\x0b\x43hatService\x12\x34\n\rCreateAccount\x12\r.grpc.Account\x1a\x14.grpc.CommonResponse\x12\x34\n\rDeleteAccount\x12\r.grpc.Account\x1a\x14.grpc.CommonResponse\x12\x33\n\x0cLoginAccount\x12\r.grpc.Account\x1a\x14.grpc.CommonResponse\x12\x34\n\rLogoutAccount\x12\r.grpc.Account\x1a\x14.grpc.CommonResponse\x12\x37\n\x0cListAccounts\x12\x16.grpc.ListAccountQuery\x1a\r.grpc.Account0\x01\x12\x32\n\x0bSendMessage\x12\r.grpc.Message\x1a\x14.grpc.CommonResponse\x12*\n\nChatStream\x12\x0b.grpc.Empty\x1a\r.grpc.Message0\x01\x12\x36\n\x0f\x44\x65liverMessages\x12\r.grpc.Account\x1a\x14.grpc.CommonResponseb\x06proto3')
+
+
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13proto/chatapp.proto\x12\x04grpc\"\x07\n\x05\x45mpty\"-\n\x07\x41\x63\x63ount\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"\x18\n\x04User\x12\x10\n\x08username\x18\x01 \x01(\t\"D\n\x07Message\x12\x14\n\x0c\x66romUsername\x18\x01 \x01(\t\x12\x12\n\ntoUsername\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\"C\n\x0e\x43ommonResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x14\n\x07message\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\n\n\x08_message\"<\n\x10ListAccountQuery\x12\x18\n\x0bsearch_term\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x0e\n\x0c_search_term2\xac\x03\n\x0b\x43hatService\x12\x34\n\rCreateAccount\x12\r.grpc.Account\x1a\x14.grpc.CommonResponse\x12\x31\n\rDeleteAccount\x12\n.grpc.User\x1a\x14.grpc.CommonResponse\x12\x33\n\x0cLoginAccount\x12\r.grpc.Account\x1a\x14.grpc.CommonResponse\x12\x31\n\rLogoutAccount\x12\n.grpc.User\x1a\x14.grpc.CommonResponse\x12\x37\n\x0cListAccounts\x12\x16.grpc.ListAccountQuery\x1a\r.grpc.Account0\x01\x12\x32\n\x0bSendMessage\x12\r.grpc.Message\x1a\x14.grpc.CommonResponse\x12*\n\nChatStream\x12\x0b.grpc.Empty\x1a\r.grpc.Message0\x01\x12\x33\n\x0f\x44\x65liverMessages\x12\n.grpc.User\x1a\x14.grpc.CommonResponseb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
-_builder.BuildTopDescriptorsAndMessages(
-    DESCRIPTOR, 'proto.chatapp_pb2', globals())
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.chatapp_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
-    DESCRIPTOR._options = None
-    _EMPTY._serialized_start = 29
-    _EMPTY._serialized_end = 36
-    _ACCOUNT._serialized_start = 38
-    _ACCOUNT._serialized_end = 65
-    _MESSAGE._serialized_start = 67
-    _MESSAGE._serialized_end = 135
-    _COMMONRESPONSE._serialized_start = 137
-    _COMMONRESPONSE._serialized_end = 204
-    _LISTACCOUNTQUERY._serialized_start = 206
-    _LISTACCOUNTQUERY._serialized_end = 266
-    _CHATSERVICE._serialized_start = 269
-    _CHATSERVICE._serialized_end = 706
+  DESCRIPTOR._options = None
+  _EMPTY._serialized_start=29
+  _EMPTY._serialized_end=36
+  _ACCOUNT._serialized_start=38
+  _ACCOUNT._serialized_end=83
+  _USER._serialized_start=85
+  _USER._serialized_end=109
+  _MESSAGE._serialized_start=111
+  _MESSAGE._serialized_end=179
+  _COMMONRESPONSE._serialized_start=181
+  _COMMONRESPONSE._serialized_end=248
+  _LISTACCOUNTQUERY._serialized_start=250
+  _LISTACCOUNTQUERY._serialized_end=310
+  _CHATSERVICE._serialized_start=313
+  _CHATSERVICE._serialized_end=741
 # @@protoc_insertion_point(module_scope)

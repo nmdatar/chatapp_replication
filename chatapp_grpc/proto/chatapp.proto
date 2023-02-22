@@ -6,6 +6,11 @@ message Empty {}
 
 message Account {
     string username = 1;
+    string password = 2;
+}
+
+message User {
+    string username = 1;
 }
 
 message Message {
@@ -28,13 +33,13 @@ service ChatService {
     rpc CreateAccount (Account) returns (CommonResponse);
 
     // delete account
-    rpc DeleteAccount (Account) returns (CommonResponse);
+    rpc DeleteAccount (User) returns (CommonResponse);
 
     // login account
     rpc LoginAccount (Account) returns (CommonResponse);
 
     // logout account
-    rpc LogoutAccount (Account) returns (CommonResponse);
+    rpc LogoutAccount (User) returns (CommonResponse);
 
     // list accounts, could supply a search term
     rpc ListAccounts (ListAccountQuery) returns (stream Account);
@@ -46,6 +51,6 @@ service ChatService {
     rpc ChatStream (Empty) returns (stream Message);
 
     // retry message
-    rpc DeliverMessages (Account) returns (CommonResponse);
+    rpc DeliverMessages (User) returns (CommonResponse);
 
 } 

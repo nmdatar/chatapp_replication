@@ -28,24 +28,33 @@ class Client:
 
     def create_or_login_user(self):
         new_username = self.username
-
+        # create account if account is non-existent
         if new_username is None:
             new_username = input("Please enter a username:\n")
+            new_password = input("Please enter a password:\n")
+        else:
+            # create password if password is non-existent
+            new_password = input("Please enter a password:\n")
 
         print(f'Logging in {new_username}')
 
-        res1 = self.conn.LoginAccount(chatapp.Account(username=new_username))
+        # call RPC method LoginAccount by passing in chatapp.Account parameters
+        res1 = self.conn.LoginAccount(chatapp.Account(
+            username=new_username, password=new_password))
 
         if res1.success:
             self.username = new_username
+            print(res1.message)
             return
         else:
+            # create account for user if user doesn't exist
             print(f'Account not exist. Creating one...')
             res2 = self.conn.CreateAccount(
-                chatapp.Account(username=new_username))
+                chatapp.Account(username=new_username, password=new_password))
 
             if res2.success:
                 self.username = new_username
+                print(res1.message)
             else:
                 print(f'Creating account failed...')
                 new_username = None
@@ -53,7 +62,7 @@ class Client:
     def delete_account(self):
         print(f'Deleting account: {self.username}')
 
-        res = self.conn.DeleteAccount(chatapp.Account(username=self.username))
+        res = self.conn.DeleteAccount(chatapp.User(username=self.username))
 
         if not res.success:
             print(f'Deleting account failed...')
@@ -63,7 +72,7 @@ class Client:
     def logout_account(self):
         print(f'Logging out account: {self.username}')
 
-        res = self.conn.LogoutAccount(chatapp.Account(username=self.username))
+        res = self.conn.LogoutAccount(chatapp.User(username=self.username))
         if not res.success:
             print(f'Logging out account failed...')
         else:
@@ -91,7 +100,7 @@ class Client:
         toUsername = input(
             "Which username do you want to retry message delivery:\n")
 
-        res = self.conn.DeliverMessages(chatapp.Account(username=toUsername))
+        res = self.conn.DeliverMessages(chatapp.User(username=toUsername))
 
         print(res)
         if res.success:
@@ -104,6 +113,7 @@ class Client:
             f'Client is listening for new messages intended for {self.username}')
         responses = self.conn.ChatStream(chatapp.Empty())
 
+        # display message to user if user is recipient
         for msg in responses:
             # only parse message intended for self
             if msg.toUsername == self.username:
@@ -111,13 +121,13 @@ class Client:
 
     def main_loop(self):
         while True:
-            command = input("Enter your command below:\n")
-
-            if command == 'login':
+            command = input(
+                "Enter your command below (login_create, delete, list, logout, send, retry):\n")
+            if command == 'login_create':
                 self.create_or_login_user()
-            elif command == 'delete_account':
+            elif command == 'delete':
                 self.delete_account()
-            elif command == 'list_accounts':
+            elif command == 'list':
                 self.list_accounts()
             elif command == 'logout':
                 self.logout_account()
