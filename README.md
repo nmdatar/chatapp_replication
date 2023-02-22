@@ -20,7 +20,7 @@ If you prefer working with conda and have it installed, please run the following
 
 ​`conda activate chatapp`
 
-Now you will be all set! 
+Now you will be all set!
 
 ### gRPC
 
@@ -75,9 +75,9 @@ To recap the usability side of things that the user will input to the client, we
 
 Other features we have later integrated are the following to ensure general reliability across commands (UPDATES):
 
-Between the client and the server, they each have a version and it first checks if the message that is coming from the client has that version; otherwise it rejects the version. In an actual protocol, a server may have commands that are present in one version that aren't in the other so we use this restriction so that all compatiibilities are met. This is something that we realized we needed to account for as we were developing our code. 
+Between the client and the server, they each have a version and it first checks if the message that is coming from the client has that version; otherwise it rejects the version. In an actual protocol, a server may have commands that are present in one version that aren't in the other so we use this restriction so that all compatiibilities are met. This is something that we realized we needed to account for as we were developing our code.
 
-Furthermore, since we can't send messages as a string, we have the encode message as a UTF-8 as a series of bytes in order for the commands to be sent across in the functions we have outlined above. We considered sending the entire string but we realized this would be sending way more data than needed. 
+Furthermore, since we can't send messages as a string, we have the encode message as a UTF-8 as a series of bytes in order for the commands to be sent across in the functions we have outlined above. We considered sending the entire string but we realized this would be sending way more data than needed.
 
 ## Part II: gRPC
 
@@ -95,7 +95,7 @@ The client.py program creates a gRPC channel that connects to the server on a pa
 
 ### Create Account, Login, Logout
 
-Since the `CreateAccount` and `Login` function have overlapping abilities, I combined the two functions into one, the `Login` function. In the server, I created a dictionary called `usernames` on the server's RAM to store every user and their connectivity. The `Login` function checks if the user is registered, if not, it creates a new user and logs them in. Otherwise, it simply logs them in. The `Logout` receives the client currently logged in and disconnects them from the server and sets their connectivity in the `usernames` dictionary.
+Since the `CreateAccount` and `Login` function have overlapping abilities, I combined the two functions into one, the `Login` function. In the server, I created a dictionary called `usernames` on the server's RAM to store every user and their connectivity. The `Login` function checks if the user is registered, if not, it creates a new user and logs them in. Otherwise, it simply logs them in. The `Logout` receives the client currently logged in and disconnects them from the server and sets their connectivity in the `usernames` dictionary. I created my Client so that each client can only access one terminal, so the logout function automatically logs out the current user without asking for username.
 
 ### List Accounts
 
@@ -109,7 +109,7 @@ With `ChatStream` running in the back, `SendMessage` stores message in `self.mes
 
 ### Delete Account
 
-You delete the account if you are logged in. After you delete the account, all your messages and queued_messages (unsent messages) are deleted as well.
+You delete the account if you are logged in. After you delete the account, all your messages and queued_messages (unsent messages) are deleted as well. This was designed with the intention that if an user deletes an account, maybe there are messages they don't want to see and the current application doesn't allow user to select which messages to view.
 
 ### Comparison: gRPC vs. Websocket
 

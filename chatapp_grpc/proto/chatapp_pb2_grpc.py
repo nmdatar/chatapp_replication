@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from . import chatapp_pb2 as proto_dot_chatapp__pb2
+from proto import chatapp_pb2 as proto_dot_chatapp__pb2
 
 
 class ChatServiceStub(object):
@@ -15,45 +15,45 @@ class ChatServiceStub(object):
             channel: A grpc.Channel.
         """
         self.CreateAccount = channel.unary_unary(
-            '/grpc.ChatService/CreateAccount',
-            request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
-        )
+                '/grpc.ChatService/CreateAccount',
+                request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
+                )
         self.DeleteAccount = channel.unary_unary(
-            '/grpc.ChatService/DeleteAccount',
-            request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
-        )
+                '/grpc.ChatService/DeleteAccount',
+                request_serializer=proto_dot_chatapp__pb2.User.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
+                )
         self.LoginAccount = channel.unary_unary(
-            '/grpc.ChatService/LoginAccount',
-            request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
-        )
+                '/grpc.ChatService/LoginAccount',
+                request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
+                )
         self.LogoutAccount = channel.unary_unary(
-            '/grpc.ChatService/LogoutAccount',
-            request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
-        )
+                '/grpc.ChatService/LogoutAccount',
+                request_serializer=proto_dot_chatapp__pb2.User.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
+                )
         self.ListAccounts = channel.unary_stream(
-            '/grpc.ChatService/ListAccounts',
-            request_serializer=proto_dot_chatapp__pb2.ListAccountQuery.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.Account.FromString,
-        )
+                '/grpc.ChatService/ListAccounts',
+                request_serializer=proto_dot_chatapp__pb2.ListAccountQuery.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.Account.FromString,
+                )
         self.SendMessage = channel.unary_unary(
-            '/grpc.ChatService/SendMessage',
-            request_serializer=proto_dot_chatapp__pb2.Message.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
-        )
+                '/grpc.ChatService/SendMessage',
+                request_serializer=proto_dot_chatapp__pb2.Message.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
+                )
         self.ChatStream = channel.unary_stream(
-            '/grpc.ChatService/ChatStream',
-            request_serializer=proto_dot_chatapp__pb2.Empty.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.Message.FromString,
-        )
+                '/grpc.ChatService/ChatStream',
+                request_serializer=proto_dot_chatapp__pb2.Empty.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.Message.FromString,
+                )
         self.DeliverMessages = channel.unary_unary(
-            '/grpc.ChatService/DeliverMessages',
-            request_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
-            response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
-        )
+                '/grpc.ChatService/DeliverMessages',
+                request_serializer=proto_dot_chatapp__pb2.User.SerializeToString,
+                response_deserializer=proto_dot_chatapp__pb2.CommonResponse.FromString,
+                )
 
 
 class ChatServiceServicer(object):
@@ -118,189 +118,188 @@ class ChatServiceServicer(object):
 
 def add_ChatServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'CreateAccount': grpc.unary_unary_rpc_method_handler(
-            servicer.CreateAccount,
-            request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
-            response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
-        ),
-        'DeleteAccount': grpc.unary_unary_rpc_method_handler(
-            servicer.DeleteAccount,
-            request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
-            response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
-        ),
-        'LoginAccount': grpc.unary_unary_rpc_method_handler(
-            servicer.LoginAccount,
-            request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
-            response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
-        ),
-        'LogoutAccount': grpc.unary_unary_rpc_method_handler(
-            servicer.LogoutAccount,
-            request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
-            response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
-        ),
-        'ListAccounts': grpc.unary_stream_rpc_method_handler(
-            servicer.ListAccounts,
-            request_deserializer=proto_dot_chatapp__pb2.ListAccountQuery.FromString,
-            response_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
-        ),
-        'SendMessage': grpc.unary_unary_rpc_method_handler(
-            servicer.SendMessage,
-            request_deserializer=proto_dot_chatapp__pb2.Message.FromString,
-            response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
-        ),
-        'ChatStream': grpc.unary_stream_rpc_method_handler(
-            servicer.ChatStream,
-            request_deserializer=proto_dot_chatapp__pb2.Empty.FromString,
-            response_serializer=proto_dot_chatapp__pb2.Message.SerializeToString,
-        ),
-        'DeliverMessages': grpc.unary_unary_rpc_method_handler(
-            servicer.DeliverMessages,
-            request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
-            response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
-        ),
+            'CreateAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateAccount,
+                    request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
+            ),
+            'DeleteAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteAccount,
+                    request_deserializer=proto_dot_chatapp__pb2.User.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
+            ),
+            'LoginAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.LoginAccount,
+                    request_deserializer=proto_dot_chatapp__pb2.Account.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
+            ),
+            'LogoutAccount': grpc.unary_unary_rpc_method_handler(
+                    servicer.LogoutAccount,
+                    request_deserializer=proto_dot_chatapp__pb2.User.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
+            ),
+            'ListAccounts': grpc.unary_stream_rpc_method_handler(
+                    servicer.ListAccounts,
+                    request_deserializer=proto_dot_chatapp__pb2.ListAccountQuery.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.Account.SerializeToString,
+            ),
+            'SendMessage': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendMessage,
+                    request_deserializer=proto_dot_chatapp__pb2.Message.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
+            ),
+            'ChatStream': grpc.unary_stream_rpc_method_handler(
+                    servicer.ChatStream,
+                    request_deserializer=proto_dot_chatapp__pb2.Empty.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.Message.SerializeToString,
+            ),
+            'DeliverMessages': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeliverMessages,
+                    request_deserializer=proto_dot_chatapp__pb2.User.FromString,
+                    response_serializer=proto_dot_chatapp__pb2.CommonResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        'grpc.ChatService', rpc_method_handlers)
+            'grpc.ChatService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
+
  # This class is part of an EXPERIMENTAL API.
-
-
 class ChatService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def CreateAccount(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatService/CreateAccount',
-                                             proto_dot_chatapp__pb2.Account.SerializeToString,
-                                             proto_dot_chatapp__pb2.CommonResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.Account.SerializeToString,
+            proto_dot_chatapp__pb2.CommonResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def DeleteAccount(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatService/DeleteAccount',
-                                             proto_dot_chatapp__pb2.Account.SerializeToString,
-                                             proto_dot_chatapp__pb2.CommonResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.User.SerializeToString,
+            proto_dot_chatapp__pb2.CommonResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def LoginAccount(request,
-                     target,
-                     options=(),
-                     channel_credentials=None,
-                     call_credentials=None,
-                     insecure=False,
-                     compression=None,
-                     wait_for_ready=None,
-                     timeout=None,
-                     metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatService/LoginAccount',
-                                             proto_dot_chatapp__pb2.Account.SerializeToString,
-                                             proto_dot_chatapp__pb2.CommonResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.Account.SerializeToString,
+            proto_dot_chatapp__pb2.CommonResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def LogoutAccount(request,
-                      target,
-                      options=(),
-                      channel_credentials=None,
-                      call_credentials=None,
-                      insecure=False,
-                      compression=None,
-                      wait_for_ready=None,
-                      timeout=None,
-                      metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatService/LogoutAccount',
-                                             proto_dot_chatapp__pb2.Account.SerializeToString,
-                                             proto_dot_chatapp__pb2.CommonResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.User.SerializeToString,
+            proto_dot_chatapp__pb2.CommonResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def ListAccounts(request,
-                     target,
-                     options=(),
-                     channel_credentials=None,
-                     call_credentials=None,
-                     insecure=False,
-                     compression=None,
-                     wait_for_ready=None,
-                     timeout=None,
-                     metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_stream(request, target, '/grpc.ChatService/ListAccounts',
-                                              proto_dot_chatapp__pb2.ListAccountQuery.SerializeToString,
-                                              proto_dot_chatapp__pb2.Account.FromString,
-                                              options, channel_credentials,
-                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.ListAccountQuery.SerializeToString,
+            proto_dot_chatapp__pb2.Account.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def SendMessage(request,
-                    target,
-                    options=(),
-                    channel_credentials=None,
-                    call_credentials=None,
-                    insecure=False,
-                    compression=None,
-                    wait_for_ready=None,
-                    timeout=None,
-                    metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatService/SendMessage',
-                                             proto_dot_chatapp__pb2.Message.SerializeToString,
-                                             proto_dot_chatapp__pb2.CommonResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.Message.SerializeToString,
+            proto_dot_chatapp__pb2.CommonResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def ChatStream(request,
-                   target,
-                   options=(),
-                   channel_credentials=None,
-                   call_credentials=None,
-                   insecure=False,
-                   compression=None,
-                   wait_for_ready=None,
-                   timeout=None,
-                   metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_stream(request, target, '/grpc.ChatService/ChatStream',
-                                              proto_dot_chatapp__pb2.Empty.SerializeToString,
-                                              proto_dot_chatapp__pb2.Message.FromString,
-                                              options, channel_credentials,
-                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.Empty.SerializeToString,
+            proto_dot_chatapp__pb2.Message.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def DeliverMessages(request,
-                        target,
-                        options=(),
-                        channel_credentials=None,
-                        call_credentials=None,
-                        insecure=False,
-                        compression=None,
-                        wait_for_ready=None,
-                        timeout=None,
-                        metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/grpc.ChatService/DeliverMessages',
-                                             proto_dot_chatapp__pb2.Account.SerializeToString,
-                                             proto_dot_chatapp__pb2.CommonResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            proto_dot_chatapp__pb2.User.SerializeToString,
+            proto_dot_chatapp__pb2.CommonResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
