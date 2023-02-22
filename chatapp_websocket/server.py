@@ -27,7 +27,7 @@ cmap = {
 version = 1
 
 def handle_client(clientsocket, addr):
-
+    
     while True:
 
         try:
@@ -86,7 +86,11 @@ def handle_client(clientsocket, addr):
             clientsocket.send("Invalid command\nValid commands: create list login send deliver delete help".encode())
 
 def create(clientsocket, request, addr):
-
+    """
+    Args: clientsocket, request, addr
+    
+    Creates an account for a user
+    """
     # Make sure command is correct length
     if len(request) != 3:
         help(clientsocket=clientsocket)
@@ -113,7 +117,10 @@ def create(clientsocket, request, addr):
     return 0
             
 def ls(clientsocket, request):
-
+    """
+    Args: clientsocket, request of user
+    Lists all existing accounts
+    """
     if len(request) >= 3:
         help(clientsocket=clientsocket)
         return -1
@@ -135,6 +142,10 @@ def ls(clientsocket, request):
     return 0
 
 def login(clientsocket, request, addr):
+    """
+    Args: clientsocket, request, address of connection
+    Logins a user to an exisitng account
+    """
 
     if len(request) != 3:
         help(clientsocket=clientsocket)
@@ -171,6 +182,10 @@ def login(clientsocket, request, addr):
     return 0
 
 def send(clientsocket, request, addr):
+    """
+    Args: clientsocket, request, addr
+    Sends a message to each user
+    """
     if len(request) < 3:
         help(clientsocket=clientsocket)
         return -1
@@ -202,6 +217,13 @@ def send(clientsocket, request, addr):
 
 def deliver(clientsocket, request):
 
+    """
+    Args: Clientsocket connection, request,
+
+    Delivers a message to each user when undelivered
+    
+    """
+
     if len(request) != 3:
         help(clientsocket=clientsocket)
         clientsocket.send('\r\n\r\n'.encode())
@@ -225,6 +247,12 @@ def deliver(clientsocket, request):
     return 0
 
 def delete(clientsocket, request, addr):
+    """
+    Args: clientsocket connection, client equest, address of connection
+
+    Deletes an account for each user
+
+    """
     if len(request) != 3:
         help(clientsocket=clientsocket)
         clientsocket.send('\r\n\r\n'.encode())
