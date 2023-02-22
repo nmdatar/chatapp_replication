@@ -2,6 +2,8 @@
 
 ## Get Started
 
+#### **Pip**
+
 First, make sure you installed Pipenv, a virtual enviroment manager.
 
 Install all dependencies via `pipenv install`
@@ -9,6 +11,16 @@ Install all dependencies via `pipenv install`
 Enter the virtual enviroment via `pipenv shell`
 
 Depending on the project, refer to either 'gRPC' or 'WebSocket'
+
+#### **Conda**
+
+If you prefer working with conda and have it installed, please run the following commands:
+
+`conda env create -f environment.yml`
+
+​`conda activate chatapp`
+
+Now you will be all set! 
 
 ### gRPC
 
@@ -73,7 +85,7 @@ Furthermore, since we can't send messages as a string, we have the encode messag
 
 The .proto file is where we defined our service by providing the methods that we want our service to provide. In our .proto file, we various methods (corresponding to functions required for the assignment) and set parameters for each method. For methods such as `login` and `logout` which only require a singular request and response, we set it as unary. For methods requiring multiple requests and/or responses from client/server, we set a streaming method. For example `list_accounts` requires the server to list a stream of accounts, we set it to be a server-side streaming method.
 
-### Sever
+### Server
 
 The server.py program creates a gRPC server and listens for requests from the client to respond with the according method defined in the .proto file. The server.py program also implements the service defined in the .proto file to send back appropriate responses.
 
