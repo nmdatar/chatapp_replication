@@ -2,6 +2,12 @@
 
 ## Get Started
 
+#### Clone the Repo
+
+`git clone https://github.com/nmdatar/chatapp.git` (or SSH)
+
+`cd chatapp`
+
 #### **Pip**
 
 First, make sure you installed Pipenv, a virtual enviroment manager.
@@ -18,7 +24,7 @@ If you prefer working with conda and have it installed, please run the following
 
 `conda env create -f environment.yml`
 
-​`conda activate chatapp`
+`conda activate chatapp`
 
 Now you will be all set!
 
