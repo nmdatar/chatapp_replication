@@ -28,11 +28,6 @@ If you prefer working with conda and have it installed, please run the following
 
 Now you will be all set!
 
-### gRPC
-
-Run Server `python3 chatapp_grpc/server.py`
-
-Run Client `python3 chatapp_grpc/client.py`
 
 ### WebSocket
 
@@ -85,40 +80,15 @@ Between the client and the server, they each have a version and it first checks 
 
 Furthermore, since we can't send messages as a string, we have the encode message as a UTF-8 as a series of bytes in order for the commands to be sent across in the functions we have outlined above. We considered sending the entire string but we realized this would be sending way more data than needed.
 
-## Part II: gRPC
+## Part II: Replication
 
-### Protocol Buffers
+### Persistence
 
-The .proto file is where we defined our service by providing the methods that we want our service to provide. In our .proto file, we various methods (corresponding to functions required for the assignment) and set parameters for each method. For methods such as `login` and `logout` which only require a singular request and response, we set it as unary. For methods requiring multiple requests and/or responses from client/server, we set a streaming method. For example `list_accounts` requires the server to list a stream of accounts, we set it to be a server-side streaming method.
+Persistence is handled by storing the data into a SQL database that each server reads from upon a given change in an app state. Upon this change, the lead server or the newly appointed lead server will send this information over to the replica and save the aforementioned details into the SQL database file. 
 
-### Server
+### Fault Tolerance
 
-The server.py program creates a gRPC server and listens for requests from the client to respond with the according method defined in the .proto file. The server.py program also implements the service defined in the .proto file to send back appropriate responses.
+In an original state, we will have a lead server connected to three (or more) clients which sends the state updates to two (or more) replicas. The clients will follow the connection order in order to link with the lead server. Here, the first replica will listen for a heartbeat from the leader in order identify a signal for replacement which is also transmitted to the other consequent replicas in case the signal disappears. This state is repeated for when the leader fails, but the first replica will now instantiate the role as the leader and replica port 2 to replica port 1. This cycle repeats for when the new leader fails as well. 
 
-### Client
+The way the signalling process works is through the tracking of the heartbeats ahead of them since the first replica will listen for a heartbeat from the leader, the second one will listen to the first as well as the leader, and so on. When there's an instance of failure, the order of activity will be identified as the lead. The clients will then link to the highest order replica. 
 
-The client.py program creates a gRPC channel that connects to the server on a particular port and creates a stub, which gives us the ability to make RPC calls to the server, for the service/method it wants to call (as we defined in the .proto file). The user enters information in the commandline, which instructs the client.py program to make certain requests to the gRPC server, receive responses, and display those responses.
-
-### Create Account, Login, Logout
-
-Since the `CreateAccount` and `Login` function have overlapping abilities, I combined the two functions into one, the `Login` function. In the server, I created a dictionary called `usernames` on the server's RAM to store every user and their connectivity. The `Login` function checks if the user is registered, if not, it creates a new user and logs them in. Otherwise, it simply logs them in. The `Logout` receives the client currently logged in and disconnects them from the server and sets their connectivity in the `usernames` dictionary. I created my Client so that each client can only access one terminal, so the logout function automatically logs out the current user without asking for username.
-
-### List Accounts
-
-Returns list of all usernames that match provided search term, otherwise returns all usernames in the dictionary
-
-### Send Messages, Deliver Messages
-
-I created a `ChatStream` in server.py which provides a bidirectional streaming RPC method between the server and client ( when client creates a thread for message streaming, this function is always called, or the server is always listening to client's requests). The function is constantly running to 1) identify if `self.retry_flag == username`, which indicates that there are queued messages to be sent (Deliver Message) or 2) if the dictionary stored new messages. In both cases, it sends messages the client by yielding a chatapp.Message object
-
-With `ChatStream` running in the back, `SendMessage` stores message in `self.messages` if recipient is logged in (which `ChatStream` sends to recipient as we explained above), if not logged in, stores the message in the queued_messages list. `Retry` delivers the queued_message when the recipient is logged in.
-
-### Delete Account
-
-You delete the account if you are logged in. After you delete the account, all your messages and queued_messages (unsent messages) are deleted as well. This was designed with the intention that if an user deletes an account, maybe there are messages they don't want to see and the current application doesn't allow user to select which messages to view.
-
-### Comparison: gRPC vs. Websocket
-
-There are multiple differences between the performance of gRPC and Websockets because of the way gRPC is designed. First of all, gRPC is higher performing than WebSocket because it uses HTTP/2, which allows gRPC to handle multiple gRPC calls between client and servers with a few TCP connections. gRPC also uses binary encoding of protocol buffers, meaning the size of the buffers of the same information being sent back and forth is smaller than traditional text-based protocols like HTTP or WebSocket.
-
-gRPC is also less complex than Websockets because gRPC provides high-level abstraction for defining and implementing remote procedures. As we have explained previously, the developer using gRPC only needs to define the service interface for protocol buffers in .proto and gRPC auto-generates the server and client code. On the contrary, implementing the WebSocket method requires implementing details of establishing a connection, sending and receiving messages, parsing data, etc, which makes the program more complex and therefore more prone to error.
