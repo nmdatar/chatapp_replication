@@ -56,7 +56,7 @@ If none of the above functions are recognized, then an error message will show s
 
 To tie things up, the overall script has been set up using TCP sockets for communication and a dictionary to store account names. It listens for a specific port that we have specified to look out for incoming connections from clients (which will be elaborated in the following section). Each new TCP socket will be created using the socket.socket() function, selectors.DefaultSelector to monitor new connections, and threading.Thread to handle simultaneous requests through multithreading to allow the requests to take place in a separate thread. This was done to enable the efficient processing and capabilities of many different clients.
 
-Part B: Client Side
+## Part II: Client Side
 
 On the client side, the user is allowed to send request to the server using commands in the following:
 
@@ -80,7 +80,7 @@ Between the client and the server, they each have a version and it first checks 
 
 Furthermore, since we can't send messages as a string, we have the encode message as a UTF-8 as a series of bytes in order for the commands to be sent across in the functions we have outlined above. We considered sending the entire string but we realized this would be sending way more data than needed.
 
-## Part II: Replication
+## Part III: Replication
 
 ### Persistence
 
