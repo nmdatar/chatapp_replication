@@ -92,3 +92,7 @@ In an original state, we will have a lead server connected to three (or more) cl
 
 The way the signalling process works is through the tracking of the heartbeats ahead of them since the first replica will listen for a heartbeat from the leader, the second one will listen to the first as well as the leader, and so on. When there's an instance of failure, the order of activity will be identified as the lead. The clients will then link to the highest order replica. At first, we experimented with different forms including a random number generation lead delegation but this turned out to be unreliable in making sure a consistent order was maintained. We also tried a queuing system of server lined up to each other and goingn through them in order but failed in consistent listening for when to come in as well. 
 
+### Testing
+
+We made sure that the aforementioned two conditions held through different instances of killing the leade server. We experimented with three clients and killed the lead server, ensuring to check that all the functionalities in sending/receiving messages as well as having other clients join were maintained and repeated the process in the instance of having another replica being killed as well. 
+
