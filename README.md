@@ -16,7 +16,6 @@ Install all dependencies via `pipenv install`
 
 Enter the virtual enviroment via `pipenv shell`
 
-Depending on the project, refer to either 'gRPC' or 'WebSocket'
 
 #### **Conda**
 
