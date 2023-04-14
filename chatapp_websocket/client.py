@@ -1,6 +1,7 @@
 import sys
 import socket
 import select
+import threading
 
 class Client:
     def __init__(self) -> None:
@@ -8,7 +9,7 @@ class Client:
         self.hosts = ['10.250.122.230', '10.250.122.230', '10.250.122.230']
         self.ports = [8888, 8889, 8890]
         self.version = 1
-    
+   
         self.cmap = {
             "create" : 0,
             "ls" : 1,
@@ -17,21 +18,52 @@ class Client:
             "delete" : 4,
             "deliver" : 5,
             "help" : 6,
+            "receive" : 7,
         }
         
         print("""\nEnter 'help' to see command usage :) \n""")
-    
+
+    def receive_messages(self) -> None:
+        while True:
+            print('hi baby')
+            request = 'receive'
+            request = request.split()
+            if (request[0] in self.cmap):
+                request[0] = str(self.cmap[request[0]])
+            else:
+                request[0] = str(max(self.cmap.values()) + 1)
+            request = [str(self.version)] + request
+            self.clientsocket.send((" ".join(request)).encode())
+            if request[1] == str(self.cmap['login']) or request[1] == str(self.cmap['delete']) or request[1] == str(self.cmap['deliver']):
+                response = ""
+                while (response[-4:] != '\r\n\r\n'):
+                    response = self.clientsocket.recv(1024).decode()
+                    if response[-4:] == '\r\n\r\n':
+                        if len(response) > 4:
+                            print(response[:-4])
+                    else:
+                        print(response)
+
+            else: 
+                response = self.clientsocket.recv(1024).decode()
+                print(response)
+
     def serve_client(self, host, port) -> None:
 
         try: 
             # Connect to the server
             self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.receivesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.clientsocket.connect((host, port))
+            # self.receivesocket.connect((host, port))
             self.inputs = [self.clientsocket, sys.stdin]
             print(f"Connecting to host: {host}, port: {port}")
 
         except ConnectionRefusedError:
             return
+        
+        rec_thread = threading.Thread(target=self.receive_messages)
+        rec_thread.start()
         
         while True:
             sys.stdout.write("\033[92mchatapp@love:~$\033[0m ")
@@ -69,19 +101,7 @@ class Client:
                         self.clientsocket.send((" ".join(request)).encode())
 
                         # flush undelivered messages if login, delete, or deliver
-                        if request[1] == str(self.cmap['login']) or request[1] == str(self.cmap['delete']) or request[1] == str(self.cmap['deliver']):
-                            response = ""
-                            while (response[-4:] != '\r\n\r\n'):
-                                response = self.clientsocket.recv(1024).decode()
-                                if response[-4:] == '\r\n\r\n':
-                                    if len(response) > 4:
-                                        print(response[:-4])
-                                else:
-                                    print(response)
-
-                        else: 
-                            response = self.clientsocket.recv(1024).decode()
-                            print(response)
+                        
     def main(self) -> None:
 
         for host, port in zip(self.hosts, self.ports):
