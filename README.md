@@ -83,13 +83,13 @@ Furthermore, since we can't send messages as a string, we have the encode messag
 
 ### Persistence
 
-Persistence is handled by storing the data into a SQL database that each server reads from upon a given change in an app state. Upon this change, the lead server or the newly appointed lead server will send this information over to the replica and save the aforementioned details into the SQL database file. 
+Persistence is handled by storing the data into a SQL database (that includes all the data, including all users and messages) that each server reads from upon a given change in an app state. Upon this change, the lead server or the newly appointed lead server will send this information over to the replica and save the aforementioned details into the SQL database file. 
 
 ### Fault Tolerance
 
 In an original state, we will have a lead server connected to three (or more) clients which sends the state updates to two (or more) replicas. The clients will follow the connection order in order to link with the lead server. Here, the first replica will listen for a heartbeat from the leader in order identify a signal for replacement which is also transmitted to the other consequent replicas in case the signal disappears. This state is repeated for when the leader fails, but the first replica will now instantiate the role as the leader and replica port 2 to replica port 1. This cycle repeats for when the new leader fails as well. 
 
-The way the signalling process works is through the tracking of the heartbeats ahead of them since the first replica will listen for a heartbeat from the leader, the second one will listen to the first as well as the leader, and so on. When there's an instance of failure, the order of activity will be identified as the lead. The clients will then link to the highest order replica. At first, we experimented with different forms including a random number generation lead delegation but this turned out to be unreliable in making sure a consistent order was maintained. We also tried a queuing system of server lined up to each other and goingn through them in order but failed in consistent listening for when to come in as well. 
+The way the signalling process works is through the tracking of the heartbeats ahead of them since the first replica will listen for a heartbeat from the leader, the second one will listen to the first as well as the leader, and so on. When there's an instance of failure, the order of activity will be identified as the lead. The clients will then link to the highest order replica (in other words, the server with the lowest id). At first, we experimented with different forms including a random number generation lead delegation but this turned out to be unreliable in making sure a consistent order was maintained. We also tried a queuing system of server lined up to each other and goingn through them in order but failed in consistent listening for when to come in as well. 
 
 ### Testing
 
