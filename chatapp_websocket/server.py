@@ -3,6 +3,7 @@ import socket
 import signal
 import threading
 import argparse
+import sqlite3
 
 class Server:
     def __init__(self, primary: bool, port: int = 8888, primary_address: str = '') -> None:
