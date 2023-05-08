@@ -1,123 +1,113 @@
-import sys
 import socket
+import argparse
+import sys
 import select
 import threading
+from rich.console import Console
 
 class Client:
-    def __init__(self) -> None:
+    def __init__(self, host: str, port: int) -> None:
+        #Create socket object
+        self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.host = host
+        self.port = port
 
-        self.hosts = ['10.250.122.230', '10.250.122.230', '10.250.122.230']
-        self.ports = [8888, 8889, 8890]
-        self.version = 1
-   
-        self.cmap = {
-            "create" : 0,
-            "ls" : 1,
-            "login" : 2,
-            "send" : 3,
-            "delete" : 4,
-            "deliver" : 5,
-            "help" : 6,
-            "receive" : 7,
-        }
+
+    # check for error in command line prompt
+    def check_error_command(self, request: str) -> int:
+        COMMANDS = ['create', 'ls', 'delete', 'send', 'login']
+        request = request.split()
+        errno = 0
+        if len(request) == 0:
+            errno = 1
+        elif request[0] not in COMMANDS:
+            errno = 1
+        elif request[0] == 'create':
+            if len(request) != 3:
+                errno = 1
+        elif request[0] == 'login':
+            if len(request) != 3:
+                errno = 1
+        elif request[0] == 'ls':
+            if len(request) > 2:
+                errno = 1
+
+        elif request[0] == 'delete':
+            if len(request) != 3:
+                errno = 1
         
-        print("""\nEnter 'help' to see command usage :) \n""")
+        elif request[0] == 'send':
+            if len(request) < 3:
+                errno = 1
+        
+        return errno
 
-    def receive_messages(self) -> None:
+    def send_request(self, request: str):
+        self.clientsocket.send(request.encode())
+
+    def receive_response(self):
         while True:
-            print('hi baby')
-            request = 'receive'
-            request = request.split()
-            if (request[0] in self.cmap):
-                request[0] = str(self.cmap[request[0]])
-            else:
-                request[0] = str(max(self.cmap.values()) + 1)
-            request = [str(self.version)] + request
-            self.clientsocket.send((" ".join(request)).encode())
-            if request[1] == str(self.cmap['login']) or request[1] == str(self.cmap['delete']) or request[1] == str(self.cmap['deliver']):
-                response = ""
-                while (response[-4:] != '\r\n\r\n'):
-                    response = self.clientsocket.recv(1024).decode()
-                    if response[-4:] == '\r\n\r\n':
-                        if len(response) > 4:
-                            print(response[:-4])
-                    else:
-                        print(response)
 
-            else: 
-                response = self.clientsocket.recv(1024).decode()
-                print(response)
+            try: 
+                response = self.clientsocket.recv(1024)
+                if response:
+                    response = response.decode()
 
-    def serve_client(self, host, port) -> None:
+                    print(response)
+                    print('> ', end='')
+                    sys.stdout.flush()
+                else:
+                    print("Server closed the connection.")
+                    sys.stdout.flush()
+                    self.clientsocket.close()
+                    
+            except Exception as e:
+                break 
+
+
+    def run(self) -> None:
 
         try: 
             # Connect to the server
-            self.clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # self.receivesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.clientsocket.connect((host, port))
-            # self.receivesocket.connect((host, port))
-            self.inputs = [self.clientsocket, sys.stdin]
-            print(f"Connecting to host: {host}, port: {port}")
+            self.clientsocket.connect((self.host, self.port))
 
-        except ConnectionRefusedError:
-            return
+        except Exception:
+            return 
         
-        rec_thread = threading.Thread(target=self.receive_messages)
-        rec_thread.start()
-        
+        listen_thread = threading.Thread(target=self.receive_response)
+        listen_thread.start()
+
         while True:
-            sys.stdout.write("\033[92mchatapp@love:~$\033[0m ")
-            sys.stdout.flush()
+            request = input("> ")
 
-            # Check if input from client vs server message sending
-            readable, writable, exceptional = select.select(self.inputs, [], [])
-            for r in readable:
-                
-                # If received message from server
-                if r is self.clientsocket:
-                    response = r.recv(1024)
-                    if response:
-                        print(response.decode())
-                    else: 
-                        print('Connection closed from server...')
-                        self.clientsocket.close()
-                        return
-                        # clientsocket.close()
-                        
-
-                # If client provides a command input      
-                elif r is sys.stdin:
-                        
-                        sys.stdout.write("-->\n")
-                        sys.stdout.flush()
-                        request = input("")
-                        request = request.split()
-                        if (request[0] in self.cmap):
-                            request[0] = str(self.cmap[request[0]])
-                        else:
-                            request[0] = str(max(self.cmap.values()) + 1)
-                        # send request to server
-                        request = [str(self.version)] + request
-                        self.clientsocket.send((" ".join(request)).encode())
-
-                        # flush undelivered messages if login, delete, or deliver
-                        
-    def main(self) -> None:
-
-        for host, port in zip(self.hosts, self.ports):
-            self.serve_client(host=host, port=port)
-
-        print('All servers down')
-        sys.exit(0)
+            # Check if listen_thread has ended
+            if not listen_thread.is_alive():
+                # print("Server closed the connection.")
+                # self.clientsocket.close()
+                return 
+            
+            # Exit the loop and close the client socket
+            if request == "quit": 
+                self.send_request("quit")
+                self.clientsocket.close()
+                print("Client closed.")
+                break
+            elif self.check_error_command(request) == 0:
+                self.send_request(request)
+            else:
+                print("Error: Invalid input. Please provide a valid command.")
 
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Client Info')
+    parser.add_argument('--hosts', nargs='+', type=str, help='IPV4 Host')
+    parser.add_argument('--ports', nargs='+', type=int, help='Port for connection')
+    args = parser.parse_args()
 
-if __name__ == '__main__':
+    for host, port in zip(args.hosts, args.ports):
+        print('Connecting to new server: ', host, port)
+        client = Client(host=host, port=port)
+        client.run()
     
-    client = Client()
-    client.main()
-
-
-
 
 
