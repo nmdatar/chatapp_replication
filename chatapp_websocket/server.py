@@ -1,296 +1,400 @@
-import sys
-import socket
-import signal
-import threading
+import os
 import argparse
+from typing import List, Dict, Tuple
+import requests
+import socket
+import threading
+import json
+import time
 import sqlite3
 
 class Server:
-    def __init__(self, primary: bool, port: int = 8888, primary_address: str = '') -> None:
+    def __init__(self, host: str, port: int = 8000, id: int = 1, primary: bool = True, primary_host : str = 'localhost', primary_port : int = 8003) -> None:
         self.accounts = {} # all accounts that exist
         self.socket_to_user = {} # dictionary to map connected addresses to usernames
         self.active_sockets = [] # active sockets
-        self.version = 1 # server version No.
-        self.server_connections = [('10.250.122.230', 8889), ('10.250.122.230', 9001), ('10.250.122.230', 10001)]
-
-        # current version command map
-        self.cmap = {
-            "create" : 0,
-            "ls" : 1,
-            "login" : 2,
-            "send" : 3,
-            "delete" : 4,
-            "deliver" : 5,
-            "help" : 6,
-            "receive" : 7,
-        }
-        self.primary = primary
-        self.primary_address = primary_address
-        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #socket object creation
-        self.host = socket.gethostname()
+        self.host = host
         self.port = port
-        self.internal_port = port + 1
-        self.serversocket.bind((self.host, self.port))
-        self.serversocket.listen(5)
-
-
-    def handle_client(self, clientsocket, addr) -> None:
+        self.id = id
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((self.host, self.port))
+        self.server.listen(5)
+        self.clients = {}
+        self.generate_available = 0
+        self.primary = primary
+        self.internal_port = self.port + 1
         
-        while True:
+        self.receive_port = self.port + 2
+        self.receive = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.await_port = self.port + 3
+        self.await_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.await_socket.bind((self.host, self.await_port))
+        self.await_socket.listen(5)
+        self.receive.bind((self.host, self.receive_port))
+        self.receive.listen(5)
 
-            try:
-                request = clientsocket.recv(1024).decode()
-                print(request)
-            except OSError:
-                break
-            # Check if connection has ended/been closed
-            if not request:
-                if str(addr) in self.socket_to_user:
-                    self.accounts[self.socket_to_user[str(addr)]]["active"] = False
-                    self.accounts[self.socket_to_user[str(addr)]]["connection"] = None
-                    self.socket_to_user.pop(str(addr))
-                print("Connection closed from client with address %s" % str(addr))
-                self.active_sockets.remove(clientsocket)
-                break
+        self.create_database()
+        self.load_database()
+        print(self.accounts)
 
-            request = request.split()
-
-            # Check correct version in client code
-            if (request[0] != str(self.version)):
-                clientsocket.send("Incorrect client software version. Please use an updated version!".encode())
-                break
-
-            request.pop(0)
-            response = self.process_request(request=request, addr=addr)
-            for resp in response:
-                clientsocket.send(resp.encode())
-
-
-    def process_request(self, request, addr) -> list:
-        resp = []
-        # CREATE
-        if request[0] == str(self.cmap['create']):
-            resp = self.create(request=request, addr=addr)
-            print(resp)
-
-        # LIST 
-        elif request[0] == str(self.cmap['ls']):
-            resp = self.ls(request=request)
-        
-        # LOGIN
-        elif request[0] == str(self.cmap['login']):     
-            resp = self.login(request=request, addr=addr)
-            resp += ['\r\n\r\n']
-
-        # SEND
-        elif request[0] == str(self.cmap['send']):
-            resp = self.send(request=request, addr=addr)
-
-        # DELIVER
-        elif request[0] == str(self.cmap['deliver']):
-            resp = self.deliver(request=request)
-            resp += ['\r\n\r\n']
-            
-        # DELETE
-        elif request[0] == str(self.cmap['delete']):
-            resp = self.delete(request=request, addr=addr)
-            resp += ['\r\n\r\n']
-            
-        # HELP
-        elif request[0] == str(self.cmap['help']):
-            resp = self.help()
-
-        elif request[0] == str(self.cmap['receive']):
-            print('hello there')
-            resp = self.receive(addr=addr)
-
+        # Change primary_host etc if it is a secondary server
+        if not self.primary:
+            self.primary_host = primary_host
+            self.primary_port = primary_port
         else:
-            print(request)
-            resp = ["Invalid command\nValid commands: create list login send deliver delete help bruhh"]
-            resp += ['\r\n\r\n']
+            self.primary_host = self.host
+            self.primary_port = self.await_port
 
-        return resp
+        self.backup_servers = {}
+        
+        print(f"Server started on {self.host}:{self.port}")
 
-    def receive(self, addr) -> list:
-        resp_msgs = []
-        if str(addr) in self.socket_to_user:
-            username = self.socket_to_user[str(addr)]
-            for msg in self.accounts[username]["received_messages"]:
-                resp_msgs.append(msg)
+    def create_database(self) -> None:
+        self.db_filename = f'./server{self.id}.db'
+        conn = sqlite3.connect(self.db_filename)
+        self.cursor = conn.cursor()
+        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='accounts'")
+        if self.cursor.fetchone() is None:
+            self.cursor.execute("CREATE TABLE accounts (row_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT, UNIQUE(username, password))")
+            conn.commit()
+        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'")
+        if self.cursor.fetchone() is None:
+            self.cursor.execute("CREATE TABLE messages (row_id INTEGER PRIMARY KEY AUTOINCREMENT, sender TEXT, recipient TEXT, message TEXT, UNIQUE(sender, recipient, message))")
+            conn.commit()
 
-        return resp_msgs
+        self.cursor.close()
+        conn.close()
 
-    def create(self, request, addr) -> list:
+    def load_database(self) -> None:
+        conn = sqlite3.connect(self.db_filename)
+
+        # Create a cursor object to execute SQL statements
+        self.cursor = conn.cursor()
+
+        # Retrieve all rows from the "accounts" table
+        self.cursor.execute("SELECT * FROM accounts")
+        rows = self.cursor.fetchall()
+
+        for row in rows:
+            username = row[1]
+            password = row[2]
+            self.create(username=username, password=password)
+
+        conn = sqlite3.connect(self.db_filename)
+        self.cursor = conn.cursor()
+
+        self.cursor.execute("SELECT * FROM messages")
+        rows = self.cursor.fetchall()
+        for row in rows:
+            sender = row[1]
+            recipient = row[2]
+            message = row[3]
+
+            self.queue_message(sender=sender, recipient=recipient, message=message)
+
+    def update_database(self, args) -> None:
+
+        print('updating db')
+        conn = sqlite3.connect(self.db_filename)
+        self.cursor = conn.cursor()
+        args = json.loads(args)
+
+        update_type = args['update_type']
+
+        if update_type == 'create':
+            
+            username = args['username']
+            password = args['password']
+
+            self.cursor.execute("INSERT OR IGNORE INTO accounts (username, password) VALUES (?, ?)", (username, password))
+
+        elif update_type == 'delete':
+
+            username = args['username']
+            password = args['password']
+            self.cursor.execute("DELETE FROM accounts WHERE username = ?", (username,))
+
+        elif update_type == 'queue':
+
+            sender = args['sender']
+            recipient = args['recipient']
+            message = args['message']
+
+            self.cursor.execute("INSERT OR IGNORE INTO messages (sender, recipient, message) VALUES (?, ?, ?)", (sender, recipient, message))
+
+        conn.commit()
+        self.cursor.close()
+        conn.close()
+
+    def maintain_heartbeat_socket(self) -> None:
+        self.internal = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.internal.bind((self.host, self.internal_port))
+        self.internal.listen(5)
+
+        while True:
+            heartbeat_server, addr = self.internal.accept()
+            heartbeat_server.close()
+
+    def await_servers(self) -> None:
+        while True:
+            try: 
+                new_server, addr = self.await_socket.accept()
+                data = b''
+                while True:
+                    
+                    chunk = new_server.recv(1024)
+                    if not chunk:
+                        break
+                    data += chunk
+                print('Received all data from connecting server')
+                data = data.decode()
+                msg = json.loads(data)
+                id = msg.pop('id')
+                self.backup_servers[id] = msg
+                print(self.backup_servers)
+                self.update_backups()
+                
+
+            except Exception:
+                break
+        
+
+    def update_backups(self) -> None:
+        msg = {}
+        if self.id in self.backup_servers.keys():
+            self.backup_servers.pop(self.id)
+        
+        msg['type'] = 'update'
+        msg['backup_servers'] = self.backup_servers
+        msg['primary_host'] = self.host
+        msg['primary_port'] = self.internal_port
+        msg = json.dumps(msg)
+        self.send_backup_message(request=msg)
+
+    def receive_updates(self) -> None:
+        while not self.primary:
+            
+            try:
+                main_server, addr = self.receive.accept()
+                
+                data = b''
+                while True:
+                    chunk = main_server.recv(1024)
+                    if not chunk:
+                        main_server.close()
+                        break
+                
+                    data += chunk
+                
+                data = data.decode()
+                msg = json.loads(data)
+                request_type = msg['type']
+
+                if request_type == 'update':
+                    
+                    self.primary_host = msg['primary_host']
+                    self.primary_port = msg['primary_port']
+                    self.backup_servers = msg['backup_servers']
+
+                elif request_type == 'create':
+                    username = msg['username']
+                    password = msg['password']
+                    self.create(username=username, password=password)
+                
+                elif request_type == 'delete':
+                    username = msg['username']
+                    password = msg['password']
+                    self.delete(username=username, password=password)
+                
+                elif request_type == 'queue':
+                    recipient = msg['recipient']
+                    sender= msg['sender']
+                    message = msg['message']
+                    self.queue_message(sender=sender, recipient=recipient, message=message)
+
+            except Exception:
+                break
+
+        return 
+
+    def takeover(self) -> None:
+        print("Taking Over ;)")
+        self.backup_servers.pop(str(self.id))
+        self.primary = True
+        self.primary_host = self.host
+        self.primary_port = self.internal_port
+        self.update_backups()
+        await_thread = threading.Thread(target=self.await_servers)
+        await_thread.start()
+        maintain_heartbeat_thread = threading.Thread(target=self.maintain_heartbeat_socket)
+        maintain_heartbeat_thread.start()
+    
+    def heartbeat(self) -> None:
+        while True:
+            if not self.primary:
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                        s.settimeout(1)
+                        s.connect((self.primary_host, self.primary_port))
+                        s.close()
+                except Exception as e:
+
+                    if self.id == int(min(self.backup_servers.keys())):
+                        self.takeover()
+                        return 
+                        
+                    else:
+                        print('Connected to new master: ', self.primary_host, self.primary_port)
+                        time.sleep(2)
+
+            time.sleep(2)
+    
+    def send_backup_message(self, request):
+        for backup in self.backup_servers.values():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((backup['host'], backup['receive_port']))
+                s.send(request.encode())
+                s.close()
+
+
+    def handle_client(self, client, addr) -> None:
+        self.clients[client] = "active"
+        print("waiting for responses")
+        while True:
+            try:
+                request = client.recv(1024).decode().strip()
+                request = request.split()
+                if not request:
+                    if str(addr) in self.socket_to_user:
+                        self.accounts[self.socket_to_user[str(addr)]]["active"] = False
+                        self.accounts[self.socket_to_user[str(addr)]]["connection"] = None
+                        self.socket_to_user.pop(str(addr))
+                    print("Connection closed from client with address %s" % str(addr))
+                    client.close()
+                    break
+            except Exception:
+                client.close()
+                break
+            
+            response = []
+            msg = {}
+
+            if request[0] == "quit":
+                self.clients.pop(client)
+                print(f"Client {client} disconnected")
+
+            elif request[0] == 'create':
+                username = request[1]
+                password = request[2]
+
+                if addr in self.socket_to_user:
+                    response.append("You are already logged into an account!")
+
+                elif username in self.accounts:
+                    response.append("Account with username already exists. Try again")
+                
+                else:
+                    response.append("Account successfully created")
+                    self.create(username=username, password=password)
+                    if self.primary:
+                        msg['type'] = 'create'
+                        msg['username'] = username
+                        msg['password'] = password
+                        msg = json.dumps(msg)
+
+                        self.send_backup_message(request=msg)
+            
+            elif request[0] == 'delete':
+                username = request[1]
+                password = request[2]
+                
+                # Check if another client is loggged in
+                if username in self.accounts and self.accounts[username]["active"] and (str(addr) not in self.socket_to_user):
+                    response.append("Someone is logged into this account")
+                # Check if current user is logged in in any capacity
+                elif (str(addr) in self.socket_to_user):
+                    if (self.socket_to_user[str(addr)] == username):
+                        response.append("You are logged into the account to be deleted. Logout first")
+                    else:
+                        response.append("You are logged into a different account. Unable to delete")
+                
+                elif username not in self.accounts or self.accounts[username]['password'] != password:
+                    response.append("Account not found or incorrect password")
+                
+                else:
+                    response.append("Successfully deleted account")
+                    response += self.delete(username=username, password=password)
+
+                    msg['type'] = 'delete'
+                    msg['username'] = username
+                    msg['password'] = password
+                    msg = json.dumps(msg)
+                    self.send_backup_message(request=msg)
+            
+            elif request[0] == 'login':
+                username = request[1]
+                password = request[2]
+                response += self.login(username=username, password=password, client=client, addr=addr)
+
+            elif request[0] == 'ls':
+                request = " ".join(request)
+                response += self.ls(request=request)
+
+            elif request[0] == 'send':
+                
+                recipient = request[1]
+                message = " ".join(request[2:])
+
+
+                # Check self socket status
+                if (str(addr)) not in self.socket_to_user:
+                    response.append("Please login to send a message")
+
+                elif recipient in self.accounts and self.accounts[recipient]['active'] == True:
+                    message_send = f"\nFrom {self.socket_to_user[str(addr)]}: Message: {message}"
+                    self.accounts[recipient]['connection'].send(message_send.encode())
+                    response.append("Message delivered!")
+
+                elif recipient not in self.accounts:
+                    response.append('Invalid: user not found')
+
+                else:
+                    sender = self.socket_to_user[str(addr)]
+                    response += self.queue_message(sender=sender, recipient=recipient, message=message)
+                    msg['type'] = 'queue'
+                    msg['recipient'] = recipient
+                    msg['sender'] = sender
+                    msg['message'] = message
+                    msg = json.dumps(msg)
+                    self.send_backup_message(request=msg)
+
+            for msg in response:
+                client.send(msg.encode())
+
+                
+    
+    def create(self, username, password) -> None:
         """
         Args: clientsocket, request, addr
         
         Creates an account for a user
         """
-        resp_msgs = []
+        self.accounts[username] = {}
+        self.accounts[username]["password"] = password
+        self.accounts[username]["active"] = False
+        self.accounts[username]["received_messages"] = []
+        self.accounts[username]["connection"] = None
 
-        # Make sure command is correct length
-        if len(request) != 3:
-            resp_msgs.append(self.help())
-            return resp_msgs
-            
+        args = {}
+        args['update_type'] = 'create'
+        args['username'] = username
+        args['password'] = password
+        args = json.dumps(args)
+        self.update_database(args=args)
 
-        username = request[1]
-        password = request[2]
+        print(f"account created u:{username} p:{password}")
 
-        if addr in self.socket_to_user:
-            resp_msgs.append("You are already logged into an account!")
-
-        elif username in self.accounts:
-            resp_msgs.append("Account with username already exists. Try again")
-        
-        # If successful create and init a new account
-        else:
-            self.accounts[username] = {}
-            self.accounts[username]["password"] = password
-            self.accounts[username]["active"] = False
-            self.accounts[username]["received_messages"] = []
-            self.accounts[username]["connection"] = None
-
-
-            resp_msgs.append("Account successfully created")
-
-        return resp_msgs
-                
-    def ls(self, request) -> list:
-        """
-        Args: clientsocket, request of user
-        Lists all existing accounts
-        """
-
-        resp_msgs = []
-
-        if len(request) >= 3:
-           
-            resp_msgs.append(self.help())
-            return resp_msgs
-            
-        # check a list of accounts with wildcard if given
-        if len(request) > 1:
-            search_term = request[1]
-            matching_accounts = [username for username in self.accounts if search_term in username]
-
-        else:
-            matching_accounts = list(self.accounts.keys())
-        
-        if matching_accounts:
-            response = "\n".join(matching_accounts)
-            resp_msgs.append(response)
-        else: 
-            resp_msgs.append('No matching accounts')
-
-        return resp_msgs
-
-    def login(self, request, addr) -> list:
-        """
-        Args: clientsocket, request, address of connection
-        Logins a user to an exisitng account
-        """
-
-        resp_msgs = []
-
-        if len(request) != 3:
-        
-            resp_msgs.append(self.help())
-            return resp_msgs
-        
-        username = request[1]
-        password = request[2]
-
-        # Check if logged in already
-        if str(addr) in self.socket_to_user:
-            resp_msgs.append("You are already logged into an account!")
-
-        # Make sure correct account information is provided
-        elif username in self.accounts and self.accounts[username]["password"] == password:
-            self.accounts[username]["active"] = True
-            self.socket_to_user[str(addr)] = username
-
-            resp_msgs.append("Login successful\n")
-
-            # Deliver undelivered messages
-            if len(self.accounts[username]["received_messages"]) >= 1:
-                resp_msgs.append("Account has undelivered messages: ")
-                resp_msgs += self.deliver(request=request)
-
-        else:
-            resp_msgs.append("Login unsuccessful")
-
-        return resp_msgs
-
-    def send(self, request, addr) -> list:
-        """
-        Args: clientsocket, request, addr
-        Sends a message to each user
-        """
-
-        resp_msgs = []
-
-        if len(request) < 3:
-            resp_msgs.append(self.help())
-            return resp_msgs
-
-        # Check self socket status
-        if (str(addr)) not in self.socket_to_user:
-            resp_msgs.append("Please login to send a message")
-        
-        else:
-            recipient = request[1]
-            message = " ".join(request[2: ])
-
-            #check user in sequence
-            if recipient in self.accounts:
-                # Check if logged in
-                if self.accounts[recipient]['active'] == True:
-                    message_send = f"\nFrom {self.socket_to_user[str(addr)]}: Message: {message}"
-                    self.accounts[recipient]["received_messages"].append(message_send)
-                    resp_msgs.append("Message delivered!")
-
-                # Otherwise queue the message
-                else:
-                    self.accounts[recipient]["received_messages"].append([self.socket_to_user[str(addr)], message])
-                    resp_msgs.append("Recipient not online. Will deliver on demand :)")
-            else:
-                resp_msgs.append('Invalid: user not found')
-
-        return resp_msgs
-
-    def deliver(self, request) -> list:
-
-        """
-        Args: Clientsocket connection, request,
-
-        Delivers a message to each user when undelivered
-        
-        """
-
-        resp_msgs = []
-
-        if len(request) != 3:
-            resp_msgs.append(self.help())
-            return resp_msgs
-        
-        username = request[1]
-        password = request[2]
-
-        if (username in self.accounts and  self.accounts[username]["password"] == password):
-        
-            for item in self.accounts[username]["received_messages"]:
-                message_send = f"\nFrom {item[0]}: Message: {item[1]}\n"
-                resp_msgs.append(message_send)
-
-            self.accounts[username]["received_messages"] = []
-        
-        else: 
-            resp_msgs.append("Nonexistent account or wrong password")
-
-        return resp_msgs
-
-    def delete(self, request, addr) -> list:
+    def delete(self, username, password) -> list:
         """
         Args: clientsocket connection, client equest, address of connection
 
@@ -300,109 +404,172 @@ class Server:
 
         resp_msgs = []
 
-        if len(request) != 3:
-            resp_msgs.append(self.help())
-            return resp_msgs
+        if len(self.accounts[username]["received_messages"]) >= 1:
+            resp_msgs.append("Account had undelivered messages: \n")
+            resp_msgs += self.deliver(username=username)
 
-        username = request[1]
-        password = request[2]
+        args = {}
+        args['update_type'] = 'delete'
+        args['username'] = username
+        args['password'] = password
+        args = json.dumps(args)
+        self.update_database(args)
+
+        self.accounts.pop(username)
+        print('deleted the account')
+        return resp_msgs
         
-        # Check if another client is loggged in
-        if username in self.accounts and self.accounts[username]["active"] and (str(addr) not in self.socket_to_user):
-            resp_msgs.append("Someone is logged into this account")
-        # Check if current user is logged in in any capacity
-        elif (str(addr) in self.socket_to_user):
-            if (self.socket_to_user[str(addr)] == username):
-                resp_msgs.append("You are logged into the account to be deleted. Logout first")
-            else:
-                resp_msgs.append("You are logged into a different account. Unable to delete")
+    def deliver(self, username) -> list:
 
-        # Aim to delete the account
+        """
+        Args: Clientsocket connection, request,
+
+        Delivers a message to each user when undelivered
+        
+        """
+
+        resp_msgs = []
+        
+        for msg in self.accounts[username]["received_messages"]:
+            msg = json.loads(msg)
+            sender = msg['From']
+            message = msg['message']
+            message_send = f"\nFrom {sender}: Message: {message}\n"
+            resp_msgs.append(message_send)
+
+        self.accounts[username]["received_messages"] = []
+
+        return resp_msgs
+    
+    def login(self, username, password, client, addr) -> list:
+        """
+        Args: clientsocket, request, address of connection
+        Logins a user to an exisitng account
+        """
+
+        resp_msgs = []
+
+        # Check if logged in already
+        if str(addr) in self.socket_to_user:
+            resp_msgs.append("You are already logged into an account!")
+
+        # Make sure correct account information is provided
         elif username in self.accounts and self.accounts[username]["password"] == password:
-            resp_msgs.append("Successfully deleted account\n")
-            if len(self.accounts[username]["received_messages"]) >= 1:
-                resp_msgs.append("Account had undelivered messages: \n")
-                self.deliver(request=request)
+            self.accounts[username]["active"] = True
+            self.socket_to_user[str(addr)] = username
+            self.accounts[username]['connection'] = client
+            resp_msgs.append("Login successful")
 
-            self.accounts.pop(username)
+            # Deliver undelivered messages
+            if len(self.accounts[username]["received_messages"]) >= 1:
+                resp_msgs.append("Account has undelivered messages: ")
+                resp_msgs += self.deliver(username=username)
 
         else:
-            resp_msgs.append("Account not found or incorrect password")
+            resp_msgs.append("Login unsuccessful")
+
+        return resp_msgs
+    
+    def ls(self, request) -> list:
+        """
+        Args: clientsocket, request of user
+        Lists all existing accounts
+        """
+
+        resp_msgs = []
+        request = request.split() 
+        # check a list of accounts with wildcard if given
+        if len(request) > 1:
+            search_term = request[1]
+            matching_accounts = [username for username in self.accounts if search_term in username]
+
+        else:
+            matching_accounts = list(self.accounts.keys())
+        
+        if matching_accounts:
+            matching_accounts = "\n".join(matching_accounts)
+            resp_msgs.append(matching_accounts)
+        else: 
+            resp_msgs.append('No matching accounts')
+
+        return resp_msgs
+    
+    def queue_message(self, sender, recipient, message) -> list:
+        """
+        Args: clientsocket, request, addr
+        Sends a message to each user
+        """
+
+        resp_msgs = []
+        # queue message
+        msg = {}
+        msg['From'] = sender
+        msg['message'] = message
+        print(msg)
+        msg = json.dumps(msg)
+        self.accounts[recipient]["received_messages"].append(msg)
+        resp_msgs.append("Recipient not online. Will deliver on demand :)")
+
+        args = {}
+        args['update_type'] = 'queue'
+        args['sender'] = sender
+        args['recipient'] = recipient
+        args['message'] = message
+        args = json.dumps(args)
+        self.update_database(args=args)
 
         return resp_msgs
 
-    def help(self) -> str:
-        return """
-        Usage: \n
-        create <username> <password> \n
-        ls [optional]<substring> \n
-        login <username> <password> \n
-        send <recipient> <message> \n
-        delete <username> <password> \n
-        deliver <username> <password> \n
-        To logout, disconnect and reconnect to the server!
-        """
+    def run(self) -> None:
 
-    def secondary_receive(self) -> None:
-        
-        try:
-            while True:
-                primary_socket, primary_addr = self.internal_socket.accept()
-                request = primary_socket.recv(1024).decode()
-                self.process_request(request)
-        except KeyboardInterrupt:
-            self.internal_socket.close()
-        
+        if self.primary:
+            await_thread = threading.Thread(target=self.await_servers)
+            await_thread.start()
+            maintain_heartbeat_socket = threading.Thread(target=self.maintain_heartbeat_socket)
+            maintain_heartbeat_socket.start()
 
-    def handle_sigint(self, sig, frame) -> None:
-        print('KeyboardInterrupt: closing server')
-        # Perform cleanup operations here (e.g., closing sockets)
-        for client in self.active_sockets:
-            client.close()
-        sys.exit(0)
+        else:
+            rec_thread = threading.Thread(target=self.receive_updates)
+            rec_thread.start()
 
-    # Startup Server
-    def main(self) -> None:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                msg = {}
+                msg['host'] = self.host
+                msg['id'] = self.id
+                msg['receive_port'] = self.receive_port
+                msg['primary_port'] = self.internal_port
+                msg['port'] = self.port
+                msg = json.dumps(msg)
+                s.connect((self.primary_host, self.primary_port))
+                s.sendall(msg.encode())
+                s.close()
 
-        # Set up signal handler for SIGINT (Ctrl+C)
-        signal.signal(signal.SIGINT, self.handle_sigint)
-        print(f"Server running on host: {self.host}, port: {self.port}")
-        if not self.primary:
-            self.internal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.internal_socket.bind((self.host, self.internal_port))
-            self.internal_socket.listen(5)
-            listen_as_secondary = threading.Thread(target=self.secondary_receive)
-        try:
-            while True:
+            time.sleep(2)
+            heartbeat_thread = threading.Thread(target=self.heartbeat)
+            heartbeat_thread.start()
 
-                # Accept incoming requests
-                clientsocket, addr = self.serversocket.accept()
-                self.active_sockets.append(clientsocket)
-                print("Connection coming from %s" % str(addr))
+        while True:
+            client, addr = self.server.accept()
+            print(f"New connection from {addr[0]}:{addr[1]}")
 
-                # Put client in its own thread
-                client_thread = threading.Thread(target=self.handle_client, args=(clientsocket, addr))
+            if self.primary:
+                client_thread = threading.Thread(target=self.handle_client, args=(client, addr))
                 client_thread.start()
-        except KeyboardInterrupt:
-            self.serversocket.close()
+            else: 
+                print('Client connected to non-primary server!')
+                msg ='Tried to connect to a non-primary server. Failed.'
+                client.send(msg.encode())
+                client.close()
 
 if __name__ == "__main__":
-    # if len(sys.argv) != 2:
-    #     print('Usage: python3 server.py port[required]')
-    #     sys.exit(0)
-    # port = int(sys.argv[1])
-    parser = argparse.ArgumentParser(description="Spinup a server")
-    parser.add_argument('-p', '--port', type=int, help='Give the port number you want the server to listen on')
-    parser.add_argument('--primary', action='store_true', help='Define if this is a primary server')
-    parser.add_argument('--primary_address', type=str, help='Give the address of primary server if secondary')
-    parser.add_argument('--id', type=int, help='The id of the server (for lowest-id election policy)')
+    parser = argparse.ArgumentParser(description="Server Connection")
+    parser.add_argument('--host', help='IPV4 Host', type=str)
+    parser.add_argument('--port', help='Port', type=int)
+    parser.add_argument('--pr', help='Primary/Secondary server', action='store_true')
+    parser.add_argument('--prhost', help='Primary Host', type=str)
+    parser.add_argument('--prport', help='Primary Host', type=int)
+    parser.add_argument('--id', help='Server ID', type=int)
     args = parser.parse_args()
-    port = args.port
-    primary = args.primary
-    if not primary:
-        primary_address = args.primary_address
-        server = Server(port=port, primary=primary, primary_address=primary_address)
-    else:
-        server = Server(port=port, primary=primary)
-        
-    server.main()
+    print(args)
+    server = Server(host=args.host, port=args.port, primary=args.pr, id=args.id, primary_host=args.prhost, primary_port=args.prport)
+    server.run()
